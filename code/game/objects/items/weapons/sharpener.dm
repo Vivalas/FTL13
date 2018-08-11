@@ -20,7 +20,7 @@
 	if(requires_sharpness && !I.sharpness)
 		to_chat(user, "<span class='notice'>You can only sharpen items that are already sharp, such as knives.</span>")
 		return
-	if(istype(I, /obj/item/weapon/melee/energy))
+	if(istype(I, /obj/item/weapon/melee/transforming/energy))
 		to_chat(user, "<span class='notice'>You don't think \the [I] will be the thing getting modified if you use it on \the [src].</span>")
 		return
 	if(istype(I, /obj/item/weapon/twohanded))//some twohanded items should still be sharpenable, but handle force differently. therefore i need this stuff
@@ -46,6 +46,11 @@
 	name = "worn out [name]"
 	desc = "[desc] At least, it used to."
 	used = 1
+	update_icon()
+
+/obj/item/weapon/sharpener/update_icon()
+	icon_state = "[initial(icon_state)]_used"
+
 
 /obj/item/weapon/sharpener/super
 	name = "super whetstone"

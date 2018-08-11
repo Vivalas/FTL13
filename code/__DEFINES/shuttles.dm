@@ -23,11 +23,26 @@
 #define SHUTTLE_ALREADY_DOCKED "we_are_already_docked"
 #define SHUTTLE_SOMEONE_ELSE_DOCKED "someone_else_docked"
 
+//Shuttles that can dock here
+
+#define ALL_SHUTTLES 63
+
+#define ALL_FOB 21 //Saves editing many files to add a new ship FOB
+#define ALL_CARGO 42
+
+#define AER_FOB 1
+#define AER_CARGO 2
+#define SCARAB_FOB 4
+#define SCARAB_CARGO 8
+#define TRAIL_FOB 16
+#define TRAIL_CARGO 32
+
 //Launching Shuttles to Centcomm
 #define NOLAUNCH -1
 #define UNLAUNCHED 0
 #define ENDGAME_LAUNCHED 1
 #define EARLY_LAUNCHED 2
+#define ENDGAME_TRANSIT 3
 
 // Ripples, effects that signal a shuttle's arrival
 #define SHUTTLE_RIPPLE_TIME 100
@@ -47,3 +62,25 @@
 #define HYPERSPACE_END 3
 
 #define CALL_SHUTTLE_REASON_LENGTH 12
+
+//Engine related
+#define ENGINE_COEFF_MIN 0.5
+#define ENGINE_COEFF_MAX 2
+#define ENGINE_DEFAULT_MAXSPEED_ENGINES 5
+
+//Docking error flags
+#define DOCKING_SUCCESS 0
+#define DOCKING_COMPLETE 1
+#define DOCKING_BLOCKED 2
+#define DOCKING_IMMOBILIZED 4
+#define DOCKING_AREA_EMPTY 8
+
+//Docking turf movements
+#define MOVE_TURF 1
+#define MOVE_AREA 2
+#define MOVE_CONTENTS 4
+
+//moveShuttle check flags
+#define SHUTTLE_GOOD_TO_GO 0
+#define SHUTTLE_INVALID_SHUTTLE 1
+#define SHUTTLE_DOCK_IN_USE 2

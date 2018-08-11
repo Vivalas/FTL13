@@ -96,9 +96,9 @@
 	agent_landmarks.len = max_teams
 	scientist_landmarks.len = max_teams
 	for(var/obj/effect/landmark/abductor/A in GLOB.landmarks_list)
-		if(istype(A,/obj/effect/landmark/abductor/agent))
+		if(istype(A, /obj/effect/landmark/abductor/agent))
 			agent_landmarks[text2num(A.team)] = A
-		else if(istype(A,/obj/effect/landmark/abductor/scientist))
+		else if(istype(A, /obj/effect/landmark/abductor/scientist))
 			scientist_landmarks[text2num(A.team)] = A
 
 	var/team_name = team_names[team_number]
@@ -140,7 +140,7 @@
 	var/team_name = team_names[team_number]
 
 	to_chat(abductor.current, "<span class='notice'>You are an agent of [team_name]!</span>")
-	to_chat(abductor.current, "<span class='notice'>With the help of your teammate, kidnap and experiment on station crew members!</span>")
+	to_chat(abductor.current, "<span class='notice'>With the help of your teammate, kidnap and experiment on ship crew members!</span>")
 	to_chat(abductor.current, "<span class='notice'>Use your stealth technology and equipment to incapacitate humans for your scientist to retrieve.</span>")
 
 	abductor.announce_objectives()
@@ -150,7 +150,7 @@
 	var/team_name = team_names[team_number]
 
 	to_chat(abductor.current, "<span class='notice'>You are a scientist of [team_name]!</span>")
-	to_chat(abductor.current, "<span class='notice'>With the help of your teammate, kidnap and experiment on station crew members!</span>")
+	to_chat(abductor.current, "<span class='notice'>With the help of your teammate, kidnap and experiment on ship crew members!</span>")
 	to_chat(abductor.current, "<span class='notice'>Use your tool and ship consoles to support the agent and retrieve human specimens.</span>")
 
 	abductor.announce_objectives()
@@ -200,7 +200,7 @@
 	to_chat(world, text)
 
 //Landmarks
-// TODO: Split into seperate landmarks for prettier ships
+// TODO: Split into separate landmarks for prettier ships
 /obj/effect/landmark/abductor
 	var/team = 1
 
@@ -210,7 +210,6 @@
 
 // OBJECTIVES
 /datum/objective/experiment
-	dangerrating = 10
 	target_amount = 6
 	var/team
 

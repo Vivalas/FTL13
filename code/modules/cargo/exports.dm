@@ -38,6 +38,8 @@ Credit dupes that require a lot of manual work shouldn't be removed, unless they
 	// We go backwards, so it'll be innermost objects sold first
 	for(var/i in reverseRange(contents))
 		var/atom/movable/thing = i
+		if(is_type_in_typecache(thing,GLOB.blacklisted_cargo_types))//Does the item contain something unsellable
+			return UNSELLABLE_ITEM
 		for(var/datum/export/E in GLOB.exports_list)
 			if(!E)
 				continue
@@ -66,16 +68,19 @@ Credit dupes that require a lot of manual work shouldn't be removed, unless they
 	var/list/export_types = list()	// Type of the exported object. If none, the export datum is considered base type.
 	var/include_subtypes = TRUE		// Set to FALSE to make the datum apply only to a strict type.
 	var/list/exclude_types = list()	// Types excluded from export
-
+	var/list/cost_modifiers	// list of keywords to boost the cost by. Used in calculatePrices.
 	// Used by print-out
 	var/total_cost = 0
 	var/total_amount = 0
 	var/init_cost
-	
+
 /datum/export/New()
 	..()
 	SSprocessing.processing += src
 	init_cost = cost
+	export_types = typecacheof(export_types)
+	exclude_types = typecacheof(exclude_types)
+
 
 /datum/export/Destroy()
 	SSprocessing.processing -= src
@@ -108,7 +113,7 @@ Credit dupes that require a lot of manual work shouldn't be removed, unless they
 		return FALSE
 	if(!include_subtypes && !(O.type in export_types))
 		return FALSE
-	if(include_subtypes && (!is_type_in_list(O, export_types) || is_type_in_list(O, exclude_types)))
+	if(include_subtypes && (!is_type_in_typecache(O, export_types) || is_type_in_typecache(O, exclude_types)))
 		return FALSE
 	if(!get_cost(O, contr, emag))
 		return FALSE
@@ -123,11 +128,11 @@ Credit dupes that require a lot of manual work shouldn't be removed, unless they
 	var/the_cost = get_cost(O)
 	var/amount = get_amount(O)
 	total_cost += the_cost
-	if(istype(O,/datum/export/material))
+	if(istype(O, /datum/export/material))
 		total_amount += amount*MINERAL_MATERIAL_AMOUNT
 	else
 		total_amount += amount
-	
+
 	cost *= GLOB.E**(-1*k_elasticity*amount)		//marginal cost modifier
 	SSblackbox.add_details("export_sold_amount","[O.type]|[amount]")
 	SSblackbox.add_details("export_sold_cost","[O.type]|[the_cost]")

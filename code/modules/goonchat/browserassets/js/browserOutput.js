@@ -27,7 +27,7 @@ var opts = {
 	//General
 	'messageCount': 0, //A count...of messages...
 	'messageLimit': 2053, //A limit...for the messages...
-	'scrollSnapTolerance': 5, //If within x pixels of bottom
+	'scrollSnapTolerance': 10, //If within x pixels of bottom
 	'clickTolerance': 10, //Keep focus if outside x pixels of mousedown position on mouseup
 	'popups': 0, //Amount of popups opened ever
 	'wasd': false, //Is the user in wasd mode?
@@ -133,7 +133,8 @@ function highlightTerms(el) {
 							newWord = words[w].replace("<", "&lt;").replace(new RegExp(opts.highlightTerms[i], 'gi'), addHighlightMarkup);
 							break;
 						}
-						console.log(newWord)
+						if (window.console)
+							console.log(newWord)
 					}
 					newText += newWord || words[w].replace("<", "&lt;");
 					newText += w >= words.length ? '' : ' ';

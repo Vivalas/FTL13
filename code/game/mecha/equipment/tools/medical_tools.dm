@@ -113,15 +113,15 @@
 
 /obj/item/mecha_parts/mecha_equipment/medical/sleeper/Topic(href,href_list)
 	..()
-	var/datum/topic_input/filter = new /datum/topic_input(href,href_list)
-	if(filter.get("eject"))
+	var/datum/topic_input/medical_filter = new /datum/topic_input(href,href_list)
+	if(medical_filter.get("eject"))
 		go_out()
-	if(filter.get("view_stats"))
+	if(medical_filter.get("view_stats"))
 		chassis.occupant << browse(get_patient_stats(),"window=msleeper")
 		onclose(chassis.occupant, "msleeper")
 		return
-	if(filter.get("inject"))
-		inject_reagent(filter.getType("inject",/datum/reagent),filter.getObj("source"))
+	if(medical_filter.get("inject"))
+		inject_reagent(medical_filter.getType("inject", /datum/reagent),medical_filter.getObj("source"))
 	return
 
 /obj/item/mecha_parts/mecha_equipment/medical/sleeper/proc/get_patient_stats()
@@ -229,10 +229,9 @@
 		return
 	if(M.health > 0)
 		M.adjustOxyLoss(-1)
-		M.updatehealth()
-	M.AdjustStunned(-4)
-	M.AdjustWeakened(-4)
-	M.AdjustStunned(-4)
+	M.AdjustStun(-80)
+	M.AdjustKnockdown(-80)
+	M.AdjustUnconscious(-80)
 	if(M.reagents.get_reagent_amount("epinephrine") < 5)
 		M.reagents.add_reagent("epinephrine", 5)
 	chassis.use_power(energy_drain)
@@ -297,9 +296,9 @@
 /obj/item/mecha_parts/mecha_equipment/medical/syringe_gun/action(atom/movable/target)
 	if(!action_checks(target))
 		return
-	if(istype(target,/obj/item/weapon/reagent_containers/syringe))
+	if(istype(target, /obj/item/weapon/reagent_containers/syringe))
 		return load_syringe(target)
-	if(istype(target,/obj/item/weapon/storage))//Loads syringes from boxes
+	if(istype(target, /obj/item/weapon/storage))//Loads syringes from boxes
 		for(var/obj/item/weapon/reagent_containers/syringe/S in target.contents)
 			load_syringe(S)
 		return
@@ -362,19 +361,19 @@
 
 /obj/item/mecha_parts/mecha_equipment/medical/syringe_gun/Topic(href,href_list)
 	..()
-	var/datum/topic_input/filter = new (href,href_list)
-	if(filter.get("toggle_mode"))
+	var/datum/topic_input/medical_filter = new (href,href_list)
+	if(medical_filter.get("toggle_mode"))
 		mode = !mode
 		update_equip_info()
 		return
-	if(filter.get("select_reagents"))
+	if(medical_filter.get("select_reagents"))
 		processed_reagents.len = 0
 		var/m = 0
 		var/message
 		for(var/i=1 to known_reagents.len)
 			if(m>=synth_speed)
 				break
-			var/reagent = filter.get("reagent_[i]")
+			var/reagent = medical_filter.get("reagent_[i]")
 			if(reagent && (reagent in known_reagents))
 				message = "[m ? ", " : null][known_reagents[reagent]]"
 				processed_reagents += reagent
@@ -386,14 +385,14 @@
 			occupant_message("Reagent processing started.")
 			log_message("Reagent processing started.")
 		return
-	if(filter.get("show_reagents"))
+	if(medical_filter.get("show_reagents"))
 		chassis.occupant << browse(get_reagents_page(),"window=msyringegun")
-	if(filter.get("purge_reagent"))
-		var/reagent = filter.get("purge_reagent")
+	if(medical_filter.get("purge_reagent"))
+		var/reagent = medical_filter.get("purge_reagent")
 		if(reagent)
 			reagents.del_reagent(reagent)
 		return
-	if(filter.get("purge_all"))
+	if(medical_filter.get("purge_all"))
 		reagents.clear_reagents()
 		return
 	return
@@ -483,7 +482,7 @@
 	if(get_dist(src,A) >= 4)
 		occupant_message("The object is too far away.")
 		return 0
-	if(!A.reagents || istype(A,/mob))
+	if(!A.reagents || ismob(A))
 		occupant_message("<span class=\"alert\">No reagent info gained from [A].</span>")
 		return 0
 	occupant_message("Analyzing reagents...")

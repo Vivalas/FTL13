@@ -27,6 +27,10 @@
 	var/gps = null
 	var/obj/effect/light_emitter/tendril/emitted_light
 
+/mob/living/simple_animal/hostile/spawner/lavaland/gib()
+	loot = null
+	. = ..()
+
 /mob/living/simple_animal/hostile/spawner/lavaland/goliath
 	mob_type = /mob/living/simple_animal/hostile/asteroid/goliath/beast/tendril
 
@@ -39,7 +43,7 @@
 	for(var/F in RANGE_TURFS(1, src))
 		if(ismineralturf(F))
 			var/turf/closed/mineral/M = F
-			M.ChangeTurf(M.turf_type,FALSE,TRUE)
+			M.ChangeTurf(M.turf_type,FALSE,FALSE,TRUE)
 	gps = new /obj/item/device/gps/internal(src)
 
 /mob/living/simple_animal/hostile/spawner/lavaland/Destroy()

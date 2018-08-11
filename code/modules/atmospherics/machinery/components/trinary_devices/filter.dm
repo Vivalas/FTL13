@@ -1,9 +1,9 @@
 /obj/machinery/atmospherics/components/trinary/filter
 	name = "gas filter"
 	icon_state = "filter_off"
-	density = 0
+	density = FALSE
 	can_unwrench = 1
-	var/on = 0
+	var/on = FALSE
 	var/on_memory = 0 //Remembers what state it should be in based on user input even if power goes out
 	var/target_pressure = ONE_ATMOSPHERE
 	var/filter_type = ""
@@ -13,12 +13,12 @@
 /obj/machinery/atmospherics/components/trinary/filter/flipped
 	icon_state = "filter_off_f"
 	flipped = 1
-	
+
 // These two filter types have critical_machine flagged to on and thus causes the area they are in to be exempt from the Grid Check event.
-	
+
 /obj/machinery/atmospherics/components/trinary/filter/critical
 	critical_machine = TRUE
-	
+
 /obj/machinery/atmospherics/components/trinary/filter/flipped/critical
 	critical_machine = TRUE
 
@@ -29,13 +29,12 @@
 		radio_connection = SSradio.add_object(src, frequency, GLOB.RADIO_ATMOSIA)
 
 /obj/machinery/atmospherics/components/trinary/filter/Destroy()
-	if(SSradio)
-		SSradio.remove_object(src,frequency)
+	SSradio.remove_object(src,frequency)
 	return ..()
 
 /obj/machinery/atmospherics/components/trinary/filter/update_icon()
 	cut_overlays()
-	for(var/direction in GLOB.cardinal)
+	for(var/direction in GLOB.cardinals)
 		if(direction & initialize_directions)
 			var/obj/machinery/atmospherics/node = findConnecting(direction)
 			if(node)
@@ -56,7 +55,7 @@
 	var/old_stat = stat
 	..()
 	if(stat & NOPOWER)
-		on = 0
+		on = FALSE
 	else
 		on = on_memory
 	if(old_stat != stat)
@@ -123,7 +122,7 @@
 	set_frequency(frequency)
 	return ..()
 
-/obj/machinery/atmospherics/components/trinary/filter/ui_interact(mob/user, ui_key = "main", datum/tgui/ui = null, force_open = 0, \
+/obj/machinery/atmospherics/components/trinary/filter/ui_interact(mob/user, ui_key = "main", datum/tgui/ui = null, force_open = FALSE, \
 																	datum/tgui/master_ui = null, datum/ui_state/state = GLOB.default_state)
 	ui = SStgui.try_update_ui(user, src, ui_key, ui, force_open)
 	if(!ui)

@@ -1,8 +1,6 @@
 //MAP CONVERTED BY dmm2tgm.py THIS HEADER COMMENT PREVENTS RECONVERSION, DO NOT REMOVE 
-"ct" = (
-/obj/effect/landmark{
-	name = "ftldock_land"
-	},
+"lD" = (
+/obj/effect/landmark/dock_spawn/land,
 /turf/open/floor/plating/asteroid/snow/surface,
 /area/space)
 "th" = (
@@ -17145,7 +17143,7 @@ th
 th
 th
 th
-ct
+lD
 th
 th
 th

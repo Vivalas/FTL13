@@ -21,7 +21,7 @@
 	desc = "Scan DNA."
 	icon_screen = "dna"
 	icon_keyboard = "med_key"
-	density = 1
+	density = TRUE
 	circuit = /obj/item/weapon/circuitboard/computer/scan_consolenew
 	var/radduration = 2
 	var/radstrength = 1
@@ -33,8 +33,8 @@
 	var/obj/machinery/dna_scannernew/connected = null
 	var/obj/item/weapon/disk/data/diskette = null
 	var/list/delayed_action = null
-	anchored = 1
-	use_power = 1
+	anchored = TRUE
+	use_power = IDLE_POWER_USE
 	idle_power_usage = 10
 	active_power_usage = 400
 
@@ -57,8 +57,8 @@
 	..()
 
 	spawn(5)
-		for(dir in list(NORTH,EAST,SOUTH,WEST))
-			connected = locate(/obj/machinery/dna_scannernew, get_step(src, dir))
+		for(var/scandir in GLOB.cardinals)
+			connected = locate(/obj/machinery/dna_scannernew, get_step(src, scandir))
 			if(!isnull(connected))
 				break
 		injectorready = world.time + INJECTOR_TIMEOUT
@@ -463,7 +463,7 @@
 				radstrength = Wrap(radstrength, 1, RADIATION_STRENGTH_MAX+1)
 
 				var/locked_state = connected.locked
-				connected.locked = 1
+				connected.locked = TRUE
 
 				current_screen = "working"
 				ShowInterface(usr)

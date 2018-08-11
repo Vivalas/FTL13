@@ -1,4 +1,4 @@
-
+#define LINKIFY_READY(string, value) "<a href='byond://?src=\ref[src];ready=[value]'>[string]</a>"
 
 /mob/dead/new_player
 	var/ready = 0
@@ -8,11 +8,11 @@
 
 	invisibility = INVISIBILITY_ABSTRACT
 
-	density = 0
+	density = FALSE
 	stat = DEAD
 	canmove = 0
 
-	anchored = 1	//  don't get pushed around
+	anchored = TRUE	//  don't get pushed around
 	var/mob/living/new_character	//for instant transfer once the round is set up
 
 /mob/dead/new_player/Initialize()
@@ -30,20 +30,25 @@
 	return
 
 /mob/dead/new_player/proc/new_player_panel()
+	var/output = "<center><p><a href='byond://?src=\ref[src];show_preferences=1'>Setup Character</a></p>"
 
-	var/output = "<center><p><a href='byond://?src=\ref[src];show_preferences=1'>Setup Character</A></p>"
-
-	if(!SSticker || SSticker.current_state <= GAME_STATE_PREGAME)
-		if(ready)
-			output += "<p>\[ <b>Ready</b> | <a href='byond://?src=\ref[src];ready=0'>Not Ready</a> \]</p>"
-		else
-			output += "<p>\[ <a href='byond://?src=\ref[src];ready=1'>Ready</a> | <b>Not Ready</b> \]</p>"
-
+	if(SSticker.current_state <= GAME_STATE_PREGAME)
+		switch(ready)
+			if(PLAYER_NOT_READY)
+				output += "<p>\[ [LINKIFY_READY("Ready", PLAYER_READY_TO_PLAY)] | <b>Not Ready</b> | [LINKIFY_READY("Observe", PLAYER_READY_TO_OBSERVE)] \]</p>"
+			if(PLAYER_READY_TO_PLAY)
+				output += "<p>\[ <b>Ready</b> | [LINKIFY_READY("Not Ready", PLAYER_NOT_READY)] | [LINKIFY_READY("Observe", PLAYER_READY_TO_OBSERVE)] \]</p>"
+			if(PLAYER_READY_TO_OBSERVE)
+				output += "<p>\[ [LINKIFY_READY("Ready", PLAYER_READY_TO_PLAY)] | [LINKIFY_READY("Not Ready", PLAYER_NOT_READY)] | <b> Observe </b> \]</p>"
 	else
-		output += "<p><a href='byond://?src=\ref[src];manifest=1'>View the Crew Manifest</A></p>"
-		output += "<p><a href='byond://?src=\ref[src];late_join=1'>Join Game!</A></p>"
+		output += "<p><a href='byond://?src=\ref[src];manifest=1'>View the Crew Manifest</a></p>"
+		output += "<p><a href='byond://?src=\ref[src];late_join=1'>Join Game!</a></p>"
+		output += "<p>[LINKIFY_READY("Observe", PLAYER_READY_TO_OBSERVE)]</p>"
 
-	output += "<p><a href='byond://?src=\ref[src];observe=1'>Observe</A></p>"
+	if(src.client && src.client.check_for_new_server_news())
+		output += "<p><b><a href='byond://?src=\ref[src];shownews=1'>Show News</A> (NEW!)</b></p>"
+	else
+		output += "<p><a href='byond://?src=\ref[src];shownews=1'>Show News</A></p>"
 
 	if(!IsGuestKey(src.key))
 		if (SSdbcore.Connect())
@@ -51,21 +56,20 @@
 			if(src.client && src.client.holder)
 				isadmin = 1
 			var/datum/DBQuery/query_get_new_polls = SSdbcore.NewQuery("SELECT id FROM [format_table_name("poll_question")] WHERE [(isadmin ? "" : "adminonly = false AND")] Now() BETWEEN starttime AND endtime AND id NOT IN (SELECT pollid FROM [format_table_name("poll_vote")] WHERE ckey = \"[ckey]\") AND id NOT IN (SELECT pollid FROM [format_table_name("poll_textreply")] WHERE ckey = \"[ckey]\")")
-			if(!query_get_new_polls.Execute())
-				return
-			var/newpoll = 0
-			if(query_get_new_polls.NextRow())
-				newpoll = 1
+			if(query_get_new_polls.Execute())
+				var/newpoll = 0
+				if(query_get_new_polls.NextRow())
+					newpoll = 1
 
-			if(newpoll)
-				output += "<p><b><a href='byond://?src=\ref[src];showpoll=1'>Show Player Polls</A> (NEW!)</b></p>"
-			else
-				output += "<p><a href='byond://?src=\ref[src];showpoll=1'>Show Player Polls</A></p>"
+				if(newpoll)
+					output += "<p><b><a href='byond://?src=\ref[src];showpoll=1'>Show Player Polls</A> (NEW!)</b></p>"
+				else
+					output += "<p><a href='byond://?src=\ref[src];showpoll=1'>Show Player Polls</A></p>"
 
 	output += "</center>"
 
 	//src << browse(output,"window=playersetup;size=210x240;can_close=0")
-	var/datum/browser/popup = new(src, "playersetup", "<div align='center'>New Player Options</div>", 220, 265)
+	var/datum/browser/popup = new(src, "playersetup", "<div align='center'>New Player Options</div>", 250, 265)
 	popup.set_window_options("can_close=0")
 	popup.set_content(output)
 	popup.open(0)
@@ -108,41 +112,20 @@
 		return 1
 
 	if(href_list["ready"])
-		if(!SSticker || SSticker.current_state <= GAME_STATE_PREGAME) // Make sure we don't ready up after the round has started
-			ready = text2num(href_list["ready"])
+		var/tready = text2num(href_list["ready"])
+		//Avoid updating ready if we're after PREGAME (they should use latejoin instead)
+		//This is likely not an actual issue buit I do'nt have time to prove that this
+		//no longer is required
+		if(SSticker.current_state <= GAME_STATE_PREGAME)
+			ready = tready
+		//if it's post initialisation and they're trying to observe we do the needful
+		if(!SSticker.current_state < GAME_STATE_PREGAME && tready == PLAYER_READY_TO_OBSERVE)
+			ready = tready
+			make_me_an_observer()
 
 	if(href_list["refresh"])
 		src << browse(null, "window=playersetup") //closes the player setup window
 		new_player_panel()
-
-	if(href_list["observe"])
-
-		if(alert(src,"Are you sure you wish to observe? You will not be able to play this round!","Player Setup","Yes","No") == "Yes")
-			if(!client)
-				return 1
-			var/mob/dead/observer/observer = new()
-
-			spawning = 1
-
-			observer.started_as_observer = 1
-			close_spawn_windows()
-			var/obj/O = locate("landmark*Observer-Start")
-			to_chat(src, "<span class='notice'>Now teleporting.</span>")
-			if (O)
-				observer.loc = O.loc
-			else
-				to_chat(src, "<span class='notice'>Teleporting failed. The map is probably still loading...</span>")
-			observer.key = key
-			observer.client = client
-			observer.set_ghost_appearance()
-			if(observer.client && observer.client.prefs)
-				observer.real_name = observer.client.prefs.real_name
-				observer.name = observer.real_name
-			observer.update_icon()
-			observer.stop_sound_channel(CHANNEL_LOBBYMUSIC)
-			QDEL_NULL(mind)
-			qdel(src)
-			return 1
 
 	if(href_list["late_join"])
 		if(!SSticker || !SSticker.IsRoundInProgress())
@@ -189,6 +172,10 @@
 			client.prefs.process_link(src, href_list)
 	else if(!href_list["late_join"])
 		new_player_panel()
+
+	if(href_list["shownews"])
+		handle_server_news()
+		return
 
 	if(href_list["showpoll"])
 		handle_player_polling()
@@ -273,6 +260,62 @@
 					return
 				to_chat(src, "<span class='notice'>Vote successful.</span>")
 
+//When you cop out of the round (NB: this HAS A SLEEP FOR PLAYER INPUT IN IT)
+/mob/dead/new_player/proc/make_me_an_observer()
+	if(QDELETED(src) || !src.client)
+		ready = PLAYER_NOT_READY
+		return FALSE
+
+	var/this_is_like_playing_right = alert(src,"Are you sure you wish to observe? You will not be able to play this round!","Player Setup","Yes","No")
+
+	if(QDELETED(src) || !src.client || this_is_like_playing_right != "Yes")
+		ready = PLAYER_NOT_READY
+		src << browse(null, "window=playersetup") //closes the player setup window
+		new_player_panel()
+		return FALSE
+
+	var/mob/dead/observer/observer = new()
+	spawning = TRUE
+
+	observer.started_as_observer = TRUE
+	close_spawn_windows()
+	var/obj/O = locate("landmark*Observer-Start")
+	to_chat(src, "<span class='notice'>Now teleporting.</span>")
+	if (O)
+		observer.loc = O.loc
+	else
+		to_chat(src, "<span class='notice'>Teleporting failed. Ahelp an admin please</span>")
+		stack_trace("There's no freaking observer landmark available on this map or you're making observers before the map is initialised")
+	observer.key = key
+	observer.client = client
+	observer.set_ghost_appearance()
+	if(observer.client && observer.client.prefs)
+		observer.real_name = observer.client.prefs.real_name
+		observer.name = observer.real_name
+	observer.update_icon()
+	observer.stop_sound_channel(CHANNEL_LOBBYMUSIC)
+	QDEL_NULL(mind)
+	qdel(src)
+	return TRUE
+
+/mob/dead/new_player/proc/handle_server_news()
+	if(!client)
+		return
+	var/savefile/F = get_server_news()
+	if(F)
+		client.last_news_hash = md5(F["body"])
+
+		var/dat = "<html><body><center>"
+		dat += "<h1>[F["title"]]</h1>"
+		dat += "<br>"
+		dat += "[F["body"]]"
+		dat += "<br>"
+		dat += "<font size='2'><i>Last written by [F["author"]], on [F["timestamp"]].</i></font>"
+		dat += "</center></body></html>"
+		var/datum/browser/popup = new(src, "Server News", "Server News", 450, 300, src)
+		popup.set_content(dat)
+		popup.open()
+
 /mob/dead/new_player/proc/IsJobAvailable(rank)
 	var/datum/job/job = SSjob.GetJob(rank)
 	if(!job)
@@ -351,7 +394,6 @@
 
 /mob/dead/new_player/proc/AddEmploymentContract(mob/living/carbon/human/employee)
 	//TODO:  figure out a way to exclude wizards/nukeops/demons from this.
-	sleep(30)
 	for(var/C in GLOB.employmentCabinets)
 		var/obj/structure/filingcabinet/employment/employmentCabinet = C
 		if(!employmentCabinet.virgin)
@@ -369,10 +411,10 @@
 	if(SSshuttle.emergency)
 		switch(SSshuttle.emergency.mode)
 			if(SHUTTLE_ESCAPE)
-				dat += "<div class='notice red'>The station has been evacuated.</div><br>"
+				dat += "<div class='notice red'>The ship has been evacuated.</div><br>"
 			if(SHUTTLE_CALL)
 				if(!SSshuttle.canRecall())
-					dat += "<div class='notice red'>The station is currently undergoing evacuation procedures.</div><br>"
+					dat += "<div class='notice red'>The ship is currently undergoing evacuation procedures.</div><br>"
 
 	var/available_job_count = 0
 	for(var/datum/job/job in SSjob.occupations)
@@ -380,7 +422,7 @@
 			available_job_count++;
 
 	if(length(SSjob.prioritized_jobs))
-		dat += "<div class='notice red'>The station has flagged these jobs as high priority:<br>"
+		dat += "<div class='notice red'>The ship has flagged these jobs as high priority:<br>"
 		var/amt = length(SSjob.prioritized_jobs)
 		var/amt_count
 		for(var/datum/job/a in SSjob.prioritized_jobs)

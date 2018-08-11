@@ -39,7 +39,7 @@
 	var/smooth_icon = 'icons/turf/floors/ash.dmi'
 	desc = "The ground is covered in volcanic ash."
 	baseturf = /turf/open/floor/plating/ashplanet/wateryrock //I assume this will be a chasm eventually, once this becomes an actual surface
-	initial_gas_mix = "o2=14;n2=23;TEMP=300"
+	initial_gas_mix = LAVALAND_DEFAULT_ATMOS
 	planetary_atmos = TRUE
 
 /turf/open/floor/plating/ashplanet/Initialize()
@@ -121,30 +121,6 @@
 /turf/open/floor/plating/ironsand/burn_tile()
 	return
 
-
-/turf/open/floor/plating/ice
-	name = "ice sheet"
-	desc = "A sheet of solid ice. Looks slippery."
-	icon = 'icons/turf/snow.dmi'
-	icon_state = "ice"
-	temperature = 180
-	baseturf = /turf/open/floor/plating/ice
-	slowdown = 1
-	wet = TURF_WET_PERMAFROST
-
-/turf/open/floor/plating/ice/colder
-	temperature = 140
-
-/turf/open/floor/plating/ice/temperate
-	temperature = 255.37
-
-/turf/open/floor/plating/ice/break_tile()
-	return
-
-/turf/open/floor/plating/ice/burn_tile()
-	return
-
-
 /turf/open/floor/plating/snowed
 	name = "snowed-over plating"
 	desc = "A section of plating covered in a light layer of snow."
@@ -172,7 +148,7 @@
 			var/obj/L = locate(/obj/structure/lattice, src)
 			if(L)
 				qdel(L)
-			playsound(src, 'sound/weapons/Genhit.ogg', 50, 1)
+			playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
 			to_chat(user, "<span class='notice'>You build a floor.</span>")
 			ChangeTurf(/turf/open/floor/plating)
 		else

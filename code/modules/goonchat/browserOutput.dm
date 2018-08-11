@@ -32,7 +32,7 @@ GLOBAL_DATUM_INIT(iconCache, /savefile, new("data/iconCache.sav")) //Cache of ic
 		alert(owner.mob, "Updated chat window does not exist. If you are using a custom skin file please allow the game to update.")
 		return
 
-	if(winget(owner, "browseroutput", "is-disabled") == "false") //Already setup
+	if(winget(owner, "browseroutput", "is-visible") == "true") //Already setup
 		doneLoading()
 
 	else //Not setup
@@ -90,14 +90,23 @@ GLOBAL_DATUM_INIT(iconCache, /savefile, new("data/iconCache.sav")) //Cache of ic
 
 	testing("Chat loaded for [owner.ckey]")
 	loaded = TRUE
-	winset(owner, "browseroutput", "is-disabled=false")
+	showChat()
+
+
 	for(var/message in messageQueue)
 		to_chat(owner, message)
 
 	messageQueue = null
 	sendClientData()
 
+	//do not convert to to_chat()
+	owner << {"<span class="userdanger">If you can see this, update byond.</span>"}
+
 	pingLoop()
+
+/datum/chatOutput/proc/showChat()
+	winset(owner, "output", "is-visible=false")
+	winset(owner, "browseroutput", "is-disabled=false;is-visible=true")
 
 /datum/chatOutput/proc/pingLoop()
 	set waitfor = FALSE
@@ -133,7 +142,7 @@ GLOBAL_DATUM_INIT(iconCache, /savefile, new("data/iconCache.sav")) //Cache of ic
 			var/list/found = new()
 			for(var/i in connectionHistory.len to 1 step -1)
 				var/list/row = src.connectionHistory[i]
-				if (!row || row.len < 3 || (!row["ckey"] && !row["compid"] && !row["ip"])) //Passed malformed history object
+				if (!row || row.len < 3 || (!row["ckey"] || !row["compid"] || !row["ip"])) //Passed malformed history object
 					return
 				if (world.IsBanned(row["ckey"], row["compid"], row["ip"]))
 					found = row
@@ -143,7 +152,7 @@ GLOBAL_DATUM_INIT(iconCache, /savefile, new("data/iconCache.sav")) //Cache of ic
 			if (found.len > 0)
 				//TODO: add a new evasion ban for the CURRENT client details, using the matched row details
 				message_admins("[key_name(src.owner)] has a cookie from a banned account! (Matched: [found["ckey"]], [found["ip"]], [found["compid"]])")
-				log_admin("[key_name(src.owner)] has a cookie from a banned account! (Matched: [found["ckey"]], [found["ip"]], [found["compid"]])")
+				log_admin_private("[key_name(owner)] has a cookie from a banned account! (Matched: [found["ckey"]], [found["ip"]], [found["compid"]])")
 
 	cookieSent = TRUE
 
@@ -160,6 +169,18 @@ GLOBAL_DATUM_INIT(iconCache, /savefile, new("data/iconCache.sav")) //Cache of ic
 //Converts an icon to base64. Operates by putting the icon in the iconCache savefile,
 // exporting it as text, and then parsing the base64 from that.
 // (This relies on byond automatically storing icons in savefiles as base64)
+/proc/grab_client(target)
+	if(istype(target, /client))
+		return target
+	else if(ismob(target))
+		var/mob/M = target
+		if(M.client)
+			return M.client
+	else if(istype(target, /datum/mind))
+		var/datum/mind/M = target
+		if(M.current && M.current.client)
+			return M.current.client
+
 /proc/icon2base64(icon/icon, iconKey = "misc")
 	if (!isicon(icon))
 		return FALSE
@@ -171,21 +192,24 @@ GLOBAL_DATUM_INIT(iconCache, /savefile, new("data/iconCache.sav")) //Cache of ic
 /proc/bicon(thing)
 	if (!thing)
 		return
-
+	var/static/list/bicon_cache = list()
 	if (isicon(thing))
-		//Icons get pooled constantly, references are no good here.
-		/*if (!bicon_cache["\ref[obj]"]) // Doesn't exist yet, make it.
-			bicon_cache["\ref[obj]"] = icon2base64(obj)
-		return "<img class='icon misc' src='data:image/png;base64,[bicon_cache["\ref[obj]"]]'>"*/
-		return "<img class='icon misc' src='data:image/png;base64,[icon2base64(thing)]'>"
+		var/icon/I = thing
+		var/icon_md5 = md5(I)
+		if (!bicon_cache[icon_md5]) // Doesn't exist yet, make it.
+			I = icon(I) //copy it
+			I.Scale(16,16) //scale it
+			bicon_cache[icon_md5] = icon2base64(thing) //base64 it
+		return "<img class='icon misc' src='data:image/png;base64,[bicon_cache[icon_md5]]'>"
 
 	// Either an atom or somebody fucked up and is gonna get a runtime, which I'm fine with.
 	var/atom/A = thing
 	var/key = "[istype(A.icon, /icon) ? "\ref[A.icon]" : A.icon]:[A.icon_state]"
 
-	var/static/list/bicon_cache = list()
+
 	if (!bicon_cache[key]) // Doesn't exist, make it.
 		var/icon/I = icon(A.icon, A.icon_state, SOUTH, 1)
+		I.Scale(16,16)
 		if (ishuman(thing)) // Shitty workaround for a BYOND issue.
 			var/icon/temp = I
 			I = icon()
@@ -228,12 +252,13 @@ GLOBAL_DATUM_INIT(iconCache, /savefile, new("data/iconCache.sav")) //Cache of ic
 		targets = target
 		if(!targets.len)
 			return
-
+	var/original_message = message
 	//Some macros remain in the string even after parsing and fuck up the eventual output
 	message = replacetext(message, "\improper", "")
 	message = replacetext(message, "\proper", "")
 	message = replacetext(message, "\n", "<br>")
 	message = replacetext(message, "\t", "[GLOB.TAB][GLOB.TAB]")
+	message = r_text2unicode(message)
 
 	for(var/I in targets)
 		//Grab us a client if possible
@@ -242,26 +267,16 @@ GLOBAL_DATUM_INIT(iconCache, /savefile, new("data/iconCache.sav")) //Cache of ic
 		if (!C)
 			continue
 
+		//Send it to the old style output window.
+		C << original_message
+
 		if(!C.chatOutput || C.chatOutput.broken) // A player who hasn't updated his skin file.
-			C << message
-			return TRUE
+			continue
 
 		if(!C.chatOutput.loaded)
-			//Client sucks at loading things, put their messages in a queue
+			//Client still loading, put their messages in a queue
 			C.chatOutput.messageQueue += message
-			return
+			continue
 
 		// url_encode it TWICE, this way any UTF-8 characters are able to be decoded by the Javascript.
 		C << output(url_encode(url_encode(message)), "browseroutput:output")
-
-/proc/grab_client(target)
-	if(istype(target, /client))
-		return target
-	else if(istype(target, /mob))
-		var/mob/M = target
-		if(M.client)
-			return M.client
-	else if(istype(target, /datum/mind))
-		var/datum/mind/M = target
-		if(M.current && M.current.client)
-			return M.current.client

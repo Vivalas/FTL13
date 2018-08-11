@@ -65,11 +65,11 @@
 
 /obj/item/mine/stun
 	name = "stun mine"
-	var/stun_time = 8
+	var/stun_time = 160
 
-/obj/item/mine/stun/mineEffect(mob/victim)
+/obj/item/mine/stun/mineEffect(mob/living/victim)
 	if(isliving(victim))
-		victim.Weaken(stun_time)
+		victim.Knockdown(stun_time)
 
 /obj/item/mine/tesla
 	name = "ZAP mine"
@@ -77,7 +77,7 @@
 
 /obj/item/mine/tesla/mineEffect(mob/victim)
 	if(isliving(victim))
-		playsound(victim.loc, 'sound/magic/LightningShock.ogg', 100, 1, extrarange = 5)
+		playsound(victim.loc, 'sound/magic/lightningshock.ogg', 100, 1, extrarange = 5)
 		tesla_zap(victim, 3, watts) //ZAP for 1/5000 of the amount of power, which is from 15-25 with 200000W
 
 /obj/item/mine/kickmine
@@ -190,7 +190,7 @@
 	var/pure_red = list(0,0,0,0,0,0,0,0,0,1,0,0)
 
 	spawn(0)
-		new /obj/effect/hallucination/delusion(victim.loc,victim,force_kind="demon",duration=duration,skip_nearby=0)
+		new /datum/hallucination/delusion(victim,TRUE,force_kind="demon",duration=duration,skip_nearby=0)
 
 	var/obj/item/weapon/twohanded/required/chainsaw/doomslayer/chainsaw = new(victim.loc)
 	chainsaw.flags |= NODROP

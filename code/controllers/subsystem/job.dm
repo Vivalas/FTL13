@@ -227,14 +227,13 @@ SUBSYSTEM_DEF(job)
 	Debug("Running DO")
 
 	//Holder for Triumvirate is stored in the SSticker, this just processes it
-	if(SSticker)
+	if(SSticker.triai)
 		for(var/datum/job/ai/A in occupations)
-			if(SSticker.triai)
-				A.spawn_positions = 3
+			A.spawn_positions = 3
 
 	//Get the players who are ready
 	for(var/mob/dead/new_player/player in GLOB.player_list)
-		if(player.ready && player.mind && !player.mind.assigned_role)
+		if(player.ready == PLAYER_READY_TO_PLAY && player.mind && !player.mind.assigned_role)
 			unassigned += player
 
 	initial_players_to_assign = unassigned.len
@@ -414,7 +413,7 @@ SUBSYSTEM_DEF(job)
 	if(job.req_admin_notify)
 		to_chat(M, "<b>You are playing a job that is important for Game Progression. If you have to disconnect, please notify the admins via adminhelp.</b>")
 	if(config.minimal_access_threshold)
-		to_chat(M, "<FONT color='blue'><B>As this station was initially staffed with a [config.jobs_have_minimal_access ? "full crew, only your job's necessities" : "skeleton crew, additional access may"] have been added to your ID card.</B></font>")
+		to_chat(M, "<FONT color='blue'><B>As this ship was initially staffed with a [config.jobs_have_minimal_access ? "full crew, only your job's necessities" : "skeleton crew, additional access may"] have been added to your ID card.</B></font>")
 
 	if(job && H)
 		job.after_spawn(H, M)
@@ -466,7 +465,7 @@ SUBSYSTEM_DEF(job)
 		var/level5 = 0 //banned
 		var/level6 = 0 //account too young
 		for(var/mob/dead/new_player/player in GLOB.player_list)
-			if(!(player.ready && player.mind && !player.mind.assigned_role))
+			if(!(player.ready == PLAYER_READY_TO_PLAY && player.mind && !player.mind.assigned_role))
 				continue //This player is not ready
 			if(jobban_isbanned(player, job.title))
 				level5++
@@ -499,7 +498,7 @@ SUBSYSTEM_DEF(job)
 		Debug("Popcap overflow Check observer located, Player: [player]")
 	to_chat(player, "<b>You have failed to qualify for any job you desired.</b>")
 	unassigned -= player
-	player.ready = 0
+	player.ready = PLAYER_NOT_READY
 
 
 /datum/controller/subsystem/job/Recover()

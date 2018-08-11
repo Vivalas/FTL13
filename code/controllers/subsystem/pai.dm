@@ -10,11 +10,11 @@ SUBSYSTEM_DEF(pai)
 
 /datum/controller/subsystem/pai/Topic(href, href_list[])
 	if(href_list["download"])
-		var/datum/paiCandidate/candidate = locate(href_list["candidate"])
-		var/obj/item/device/paicard/card = locate(href_list["device"])
+		var/datum/paiCandidate/candidate = locate(href_list["candidate"]) in candidates
+		var/obj/item/device/paicard/card = locate(href_list["device"]) in pai_card_list
 		if(card.pai)
 			return
-		if(istype(card,/obj/item/device/paicard) && istype(candidate,/datum/paiCandidate))
+		if(istype(card, /obj/item/device/paicard) && istype(candidate, /datum/paiCandidate))
 			if(check_ready(candidate) != candidate)
 				return FALSE
 			var/mob/living/silicon/pai/pai = new(card)
@@ -34,7 +34,7 @@ SUBSYSTEM_DEF(pai)
 			usr << browse(null, "window=findPai")
 
 	if(href_list["new"])
-		var/datum/paiCandidate/candidate = locate(href_list["candidate"])
+		var/datum/paiCandidate/candidate = locate(href_list["candidate"]) in candidates
 		var/option = href_list["option"]
 		var/t = ""
 
@@ -116,7 +116,7 @@ SUBSYSTEM_DEF(pai)
 	dat += "<tr class=\"d1\"><td><a href='byond://?src=\ref[src];option=desc;new=1;candidate=\ref[candidate]'>\[Edit\]</a></td><td>What sort of pAI you typically play; your mannerisms, your quirks, etc. This can be as sparse or as detailed as you like.</td></tr>"
 
 	dat += "<tr class=\"d0\"><td>Preferred Role:</td><td>[candidate.role]</td></tr>"
-	dat += "<tr class=\"d1\"><td><a href='byond://?src=\ref[src];option=role;new=1;candidate=\ref[candidate]'>\[Edit\]</a></td><td>Do you like to partner with sneaky social ninjas? Like to help security hunt down thugs? Enjoy watching an engineer's back while he saves the station yet again? This doesn't have to be limited to just station jobs. Pretty much any general descriptor for what you'd like to be doing works here.</td></tr>"
+	dat += "<tr class=\"d1\"><td><a href='byond://?src=\ref[src];option=role;new=1;candidate=\ref[candidate]'>\[Edit\]</a></td><td>Do you like to partner with sneaky social ninjas? Like to help security hunt down thugs? Enjoy watching an engineer's back while he saves the ship yet again? This doesn't have to be limited to just ship jobs. Pretty much any general descriptor for what you'd like to be doing works here.</td></tr>"
 
 	dat += "<tr class=\"d0\"><td>OOC Comments:</td><td>[candidate.comments]</td></tr>"
 	dat += "<tr class=\"d1\"><td><a href='byond://?src=\ref[src];option=ooc;new=1;candidate=\ref[candidate]'>\[Edit\]</a></td><td>Anything you'd like to address specifically to the player reading this in an OOC manner. \"I prefer more serious RP.\", \"I'm still learning the interface!\", etc. Feel free to leave this blank if you want.</td></tr>"

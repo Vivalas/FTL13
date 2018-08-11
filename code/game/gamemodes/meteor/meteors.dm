@@ -30,7 +30,7 @@ GLOBAL_LIST_INIT(meteorsC, list(/obj/effect/meteor/dust)) //for space dust event
 	var/turf/pickedgoal
 	var/max_i = 10//number of tries to spawn meteor.
 	while(!isspaceturf(pickedstart))
-		var/startSide = pick(GLOB.cardinal)
+		var/startSide = pick(GLOB.cardinals)
 		pickedstart = spaceDebrisStartLoc(startSide, ZLEVEL_STATION)
 		pickedgoal = spaceDebrisFinishLoc(startSide, ZLEVEL_STATION)
 		max_i--
@@ -88,8 +88,8 @@ GLOBAL_LIST_INIT(meteorsC, list(/obj/effect/meteor/dust)) //for space dust event
 	desc = "You should probably run instead of gawking at this."
 	icon = 'icons/obj/meteor.dmi'
 	icon_state = "small"
-	density = 1
-	anchored = 1
+	density = TRUE
+	anchored = TRUE
 	var/hits = 4
 	var/hitpwr = 2 //Level of ex_act to be called on hit.
 	var/dest
@@ -128,19 +128,18 @@ GLOBAL_LIST_INIT(meteorsC, list(/obj/effect/meteor/dust)) //for space dust event
 /obj/effect/meteor/New()
 	..()
 	GLOB.meteor_list += src
-	if(SSaugury)
-		SSaugury.register_doom(src, threat)
+	SSaugury.register_doom(src, threat)
 	SpinAnimation()
 	QDEL_IN(src, lifetime)
 
-/obj/effect/meteor/Bump(atom/A)
+/obj/effect/meteor/Collide(atom/A)
 	if(A)
 		ram_turf(get_turf(A))
 		playsound(src.loc, meteorsound, 40, 1)
 		get_hit()
 
 /obj/effect/meteor/proc/ram_turf(turf/T)
-	//first bust whatever is in the turf
+	//first bust whatever is in the turf or check if we hit a shield
 	for(var/atom/A in T)
 		if(A != src)
 			if(isliving(A))
@@ -188,6 +187,9 @@ GLOBAL_LIST_INIT(meteorsC, list(/obj/effect/meteor/dust)) //for space dust event
 
 /obj/effect/meteor/proc/meteor_effect()
 	if(heavy)
+		var/sound/meteor_sound = sound(meteorsound)
+		var/random_frequency = get_rand_frequency()
+
 		for(var/mob/M in GLOB.player_list)
 			if((M.orbiting) && (SSaugury.watchers[M]))
 				continue
@@ -196,7 +198,7 @@ GLOBAL_LIST_INIT(meteorsC, list(/obj/effect/meteor/dust)) //for space dust event
 				continue
 			var/dist = get_dist(M.loc, src.loc)
 			shake_camera(M, dist > 20 ? 2 : 4, dist > 20 ? 1 : 3)
-			M.playsound_local(src.loc, meteorsound, 50, 1, get_rand_frequency(), 10)
+			M.playsound_local(src.loc, null, 50, 1, random_frequency, 10, S = meteor_sound)
 
 ///////////////////////
 //Meteor types
@@ -209,7 +211,7 @@ GLOBAL_LIST_INIT(meteorsC, list(/obj/effect/meteor/dust)) //for space dust event
 	pass_flags = PASSTABLE | PASSGRILLE
 	hits = 1
 	hitpwr = 3
-	meteorsound = 'sound/weapons/Gunshot_smg.ogg'
+	meteorsound = 'sound/weapons/gunshot_smg.ogg'
 	meteordrop = list(/obj/item/weapon/ore/glass)
 	threat = 1
 
@@ -298,7 +300,7 @@ GLOBAL_LIST_INIT(meteorsC, list(/obj/effect/meteor/dust)) //for space dust event
 	if(!isspaceturf(T))
 		new /obj/effect/decal/cleanable/blood(T)
 
-/obj/effect/meteor/meaty/Bump(atom/A)
+/obj/effect/meteor/meaty/Collide(atom/A)
 	A.ex_act(hitpwr)
 	get_hit()
 
@@ -337,7 +339,7 @@ GLOBAL_LIST_INIT(meteorsC, list(/obj/effect/meteor/dust)) //for space dust event
 	..()
 	explosion(src.loc, 5, 10, 15, 20, 0)
 
-/obj/effect/meteor/tunguska/Bump()
+/obj/effect/meteor/tunguska/Collide()
 	..()
 	if(prob(20))
 		explosion(src.loc,2,4,6,8)

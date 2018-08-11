@@ -80,7 +80,7 @@
 /obj/structure/inflatable/proc/hit(var/damage, var/sound_effect = 1)
 	health = max(0, health - damage)
 	if(sound_effect)
-		playsound(loc, 'sound/effects/Glasshit.ogg', 75, 1)
+		playsound(loc, 'sound/effects/glasshit.ogg', 75, 1)
 	if(health <= 0)
 		deflate(1)
 
@@ -237,10 +237,8 @@
 	item_state = "syringe_kit"
 	max_combined_w_class = 21
 	w_class = 3
-	unique_inventory = 1
 
-/obj/item/weapon/storage/briefcase/inflatable/New()
-	..()
+/obj/item/weapon/storage/briefcase/inflatable/PopulateContents()
 	new /obj/item/inflatable/door(src)
 	new /obj/item/inflatable/door(src)
 	new /obj/item/inflatable/door(src)

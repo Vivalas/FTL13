@@ -1,15 +1,15 @@
 /obj/machinery/computer/apc_control
 	name = "power flow control console"
-	desc = "Used to remotely control the flow of power to different parts of the station."
+	desc = "Used to remotely control the flow of power to different parts of the ship."
 	icon_screen = "solar"
 	icon_keyboard = "power_key"
-	req_access = list(GLOB.access_engine)
+	req_access = list(ACCESS_ENGINE)
 	circuit = /obj/item/weapon/circuitboard/computer/apc_control
 	light_color = LIGHT_COLOR_YELLOW
 	var/list/apcs //APCs the computer has access to
 	var/mob/living/operator //Who's operating the computer right now
 	var/obj/machinery/power/apc/active_apc //The APC we're using right now
-	var/list/filters //For sorting the results
+	var/list/apc_filters //For sorting the results
 	var/checking_logs = 0
 	var/list/logs
 	var/authenticated = 0
@@ -17,7 +17,7 @@
 
 /obj/machinery/computer/apc_control/Initialize()
 	apcs = list() //To avoid BYOND making the list run through a ton of procs
-	filters = list("Name" = null, "Responsive" = null)
+	apc_filters = list("Name" = null, "Responsive" = null)
 	..()
 
 /obj/machinery/computer/apc_control/process()
@@ -31,7 +31,7 @@
 		if(active_apc)
 			if(!active_apc.locked)
 				active_apc.say("Remote access canceled. Interface locked.")
-				playsound(active_apc, 'sound/machines/BoltsDown.ogg', 25, 0)
+				playsound(active_apc, 'sound/machines/boltsdown.ogg', 25, 0)
 				playsound(active_apc, 'sound/machines/terminal_alert.ogg', 50, 0)
 			active_apc.locked = TRUE
 			active_apc.update_icon()
@@ -52,13 +52,13 @@
 		if(!checking_logs)
 			dat += "Logged in as [auth_id].<br><br>"
 			dat += "<i>Filters</i><br>"
-			dat += "<b>Name:</b> <a href='?src=\ref[src];name_filter=1'>[filters["Name"] ? filters["Name"] : "None set"]</a><br>"
-			dat += "<b>Accessible:</b> <a href='?src=\ref[src];access_filter=1'>[filters["Responsive"] ? "Non-Responsive Only" : "All"]</a><br><br>"
+			dat += "<b>Name:</b> <a href='?src=\ref[src];name_filter=1'>[apc_filters["Name"] ? apc_filters["Name"] : "None set"]</a><br>"
+			dat += "<b>Accessible:</b> <a href='?src=\ref[src];access_filter=1'>[apc_filters["Responsive"] ? "Non-Responsive Only" : "All"]</a><br><br>"
 			for(var/A in apcs)
 				var/obj/machinery/power/apc/APC = apcs[A]
-				if(filters["Name"] && !findtext(APC.name, filters["Name"]) && !findtext(APC.area.name, filters["Name"]))
+				if(apc_filters["Name"] && !findtext(APC.name, apc_filters["Name"]) && !findtext(APC.area.name, apc_filters["Name"]))
 					continue
-				if(filters["Responsive"] && !APC.aidisabled)
+				if(apc_filters["Responsive"] && !APC.aidisabled)
 					continue
 				dat += "<a href='?src=\ref[src];access_apc=\ref[APC]'>[A]</a><br>\
 				<b>Area:</b> [APC.area]<br>\
@@ -122,7 +122,7 @@
 		if(active_apc)
 			to_chat(usr, "<span class='robot danger'>[bicon(src)] Disconnected from [active_apc].</span>")
 			active_apc.say("Remote access canceled. Interface locked.")
-			playsound(active_apc, 'sound/machines/BoltsDown.ogg', 25, 0)
+			playsound(active_apc, 'sound/machines/boltsdown.ogg', 25, 0)
 			playsound(active_apc, 'sound/machines/terminal_alert.ogg', 50, 0)
 			active_apc.locked = TRUE
 			active_apc.update_icon()
@@ -135,7 +135,7 @@
 		log_game("[key_name_admin(usr)] remotely accessed [APC] from [src] at [get_area(src)].")
 		if(APC.locked)
 			APC.say("Remote access detected. Interface unlocked.")
-			playsound(APC, 'sound/machines/BoltsUp.ogg', 25, 0)
+			playsound(APC, 'sound/machines/boltsup.ogg', 25, 0)
 			playsound(APC, 'sound/machines/terminal_alert.ogg', 50, 0)
 		APC.locked = FALSE
 		APC.update_icon()
@@ -147,13 +147,13 @@
 			return
 		log_activity("changed name filter to \"[new_filter]\"")
 		playsound(src, 'sound/machines/terminal_prompt_confirm.ogg', 50, 0)
-		filters["Name"] = new_filter
+		apc_filters["Name"] = new_filter
 	if(href_list["access_filter"])
-		if(isnull(filters["Responsive"]))
-			filters["Responsive"] = 1
+		if(isnull(apc_filters["Responsive"]))
+			apc_filters["Responsive"] = 1
 			log_activity("sorted by non-responsive APCs only")
 		else
-			filters["Responsive"] = !filters["Responsive"]
+			apc_filters["Responsive"] = !apc_filters["Responsive"]
 			log_activity("sorted by all APCs")
 		playsound(src, 'sound/machines/terminal_prompt_confirm.ogg', 50, 0)
 	if(href_list["check_logs"])
@@ -172,7 +172,7 @@
 	user.visible_message("<span class='warning'>You emag [src], disabling precise logging and allowing you to clear logs.</span>")
 	log_game("[key_name_admin(user)] emagged [src] at [get_area(src)], disabling operator tracking.")
 	playsound(src, "sparks", 50, 1)
-	emagged = 1
+	emagged = TRUE
 
 /obj/machinery/computer/apc_control/proc/log_activity(log_text)
 	var/op_string = operator && !emagged ? operator : "\[NULL OPERATOR\]"

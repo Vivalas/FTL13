@@ -26,6 +26,12 @@
 /turf/open/floor/plating/asteroid/burn_tile()
 	return
 
+/turf/open/floor/plating/asteroid/MakeSlippery(wet_setting = TURF_WET_WATER, min_wet_time = 0, wet_time_to_add = 0)
+	return
+
+/turf/open/floor/plating/asteroid/MakeDry(wet_setting = TURF_WET_WATER)
+	return
+
 /turf/open/floor/plating/asteroid/ex_act(severity, target)
 	contents_explosion(severity, target)
 	switch(severity)
@@ -66,7 +72,7 @@
 				gets_dug()
 				SSblackbox.add_details("pick_used_mining","[W.type]")
 
-	if(istype(W,/obj/item/weapon/storage/bag/ore))
+	if(istype(W, /obj/item/weapon/storage/bag/ore))
 		var/obj/item/weapon/storage/bag/ore/S = W
 		if(S.collection_mode == 1)
 			for(var/obj/item/weapon/ore/O in src.contents)
@@ -78,11 +84,11 @@
 		if(!Z.use(1))
 			return
 		var/turf/open/floor/T = ChangeTurf(Z.turf_type)
-		if(istype(Z,/obj/item/stack/tile/light)) //TODO: get rid of this ugly check somehow
+		if(istype(Z, /obj/item/stack/tile/light)) //TODO: get rid of this ugly check somehow
 			var/obj/item/stack/tile/light/L = Z
 			var/turf/open/floor/light/F = T
 			F.state = L.state
-		playsound(src, 'sound/weapons/Genhit.ogg', 50, 1)
+		playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
 
 /turf/open/floor/plating/asteroid/proc/gets_dug()
 	if(dug)
@@ -113,7 +119,7 @@
 	floor_variance = 15
 
 /turf/open/floor/plating/asteroid/basalt/lava //lava underneath
-	baseturf = /turf/open/floor/plating/lava/smooth
+	baseturf = /turf/open/lava/smooth
 
 /turf/open/floor/plating/asteroid/basalt/airless
 	initial_gas_mix = "TEMP=2.7"
@@ -138,9 +144,9 @@
 ///////Surface. The surface is warm, but survivable without a suit. Internals are required. The floors break to chasms, which drop you into the underground.
 
 /turf/open/floor/plating/asteroid/basalt/lava_land_surface
-	initial_gas_mix = "o2=14;n2=23;TEMP=300"
+	initial_gas_mix = LAVALAND_DEFAULT_ATMOS
 	planetary_atmos = TRUE
-	baseturf = /turf/open/floor/plating/lava/smooth/lava_land_surface
+	baseturf = /turf/open/lava/smooth/lava_land_surface
 
 
 
@@ -177,9 +183,21 @@
 
 	data_having_type = /turf/open/floor/plating/asteroid/airless/cave/volcanic/has_data
 	turf_type = /turf/open/floor/plating/asteroid/basalt/lava_land_surface
-	initial_gas_mix = "o2=14;n2=23;TEMP=300"
+	initial_gas_mix = LAVALAND_DEFAULT_ATMOS
 
 /turf/open/floor/plating/asteroid/airless/cave/volcanic/has_data //subtype for producing a tunnel with given data
+	has_data = TRUE
+
+/turf/open/floor/plating/asteroid/airless/cave/planet
+	mob_spawn_list = list(/mob/living/simple_animal/hostile/asteroid/goliath/beast = 10, /mob/living/simple_animal/hostile/spawner/lavaland/goliath = 3, \
+		/mob/living/simple_animal/hostile/asteroid/basilisk/watcher = 8, /mob/living/simple_animal/hostile/spawner/lavaland = 2, \
+		/mob/living/simple_animal/hostile/asteroid/hivelord/legion = 6, /mob/living/simple_animal/hostile/spawner/lavaland/legion = 3, \
+		SPAWN_MEGAFAUNA = 6, /mob/living/simple_animal/hostile/asteroid/goldgrub = 2)
+
+	data_having_type = /turf/open/floor/plating/asteroid/airless/cave/planet/has_data
+	turf_type = /turf/open/floor/plating/asteroid/planet/sand
+
+/turf/open/floor/plating/asteroid/airless/cave/planet/has_data //subtype for producing a tunnel with given data
 	has_data = TRUE
 
 /turf/open/floor/plating/asteroid/airless/cave/Initialize()
@@ -243,7 +261,7 @@
 		if(istype(tunnel))
 			// Small chance to have forks in our tunnel; otherwise dig our tunnel.
 			if(i > 3 && prob(20))
-				var/turf/open/floor/plating/asteroid/airless/cave/C = tunnel.ChangeTurf(data_having_type,FALSE,TRUE)
+				var/turf/open/floor/plating/asteroid/airless/cave/C = tunnel.ChangeTurf(data_having_type,FALSE,FALSE,TRUE)
 				C.going_backwards = FALSE
 				C.produce_tunnel_from_data(rand(10, 15), dir)
 			else
@@ -269,7 +287,7 @@
 	SpawnFlora(T)
 
 	SpawnMonster(T)
-	T.ChangeTurf(turf_type,FALSE,TRUE)
+	T.ChangeTurf(turf_type,FALSE,FALSE,TRUE)
 
 /turf/open/floor/plating/asteroid/airless/cave/proc/SpawnMonster(turf/T)
 	if(prob(30))
@@ -335,4 +353,5 @@
 	initial_gas_mix = "o2=22;n2=82;TEMP=180"
 
 /turf/open/floor/plating/asteroid/snow/surface
+	initial_gas_mix = "o2=22;n2=82;TEMP=180"
 	planetary_atmos = TRUE

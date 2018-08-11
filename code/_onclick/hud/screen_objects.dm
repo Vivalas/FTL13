@@ -110,7 +110,7 @@
 
 	if(usr.incapacitated())
 		return 1
-	if(istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
+	if(istype(usr.loc, /obj/mecha)) // stops inventory actions in a mech
 		return 1
 
 	if(hud && hud.mymob && slot_id)
@@ -167,7 +167,7 @@
 		return 1
 	if(usr.incapacitated() || isobserver(usr))
 		return 1
-	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
+	if (istype(usr.loc, /obj/mecha)) // stops inventory actions in a mech
 		return 1
 
 	if(hud.mymob.active_hand_index == held_index)
@@ -196,9 +196,6 @@
 	plane = HUD_PLANE
 
 /obj/screen/drop/Click()
-	if(usr.client && usr.client.prefs.afreeze)
-		to_chat(usr.client, "<span class='userdanger'>You are frozen by an administrator.</span>")
-		return 1
 	usr.drop_item_v()
 
 /obj/screen/act_intent
@@ -242,9 +239,6 @@
 	screen_loc = ui_internal
 
 /obj/screen/internals/Click()
-	if(usr.client && usr.client.prefs.afreeze)
-		to_chat(usr.client, "<span class='userdanger'>You are frozen by an administrator.</span>")
-		return 1
 	if(!iscarbon(usr))
 		return
 	var/mob/living/carbon/C = usr
@@ -287,7 +281,7 @@
 				to_chat(H, "<span class='notice'>You are now running on internals from the [H.r_store] in your right pocket.</span>")
 				H.internal = H.r_store
 
-		//Seperate so CO2 jetpacks are a little less cumbersome.
+		//Separate so CO2 jetpacks are a little less cumbersome.
 		if(!C.internal && istype(C.back, /obj/item/weapon/tank))
 			to_chat(C, "<span class='notice'>You are now running on internals from the [C.back] on your back.</span>")
 			C.internal = C.back
@@ -344,9 +338,6 @@
 	plane = HUD_PLANE
 
 /obj/screen/resist/Click()
-	if(usr.client && usr.client.prefs.afreeze)
-		to_chat(usr.client, "<span class='userdanger'>You are frozen by an administrator.</span>")
-		return 1
 	if(isliving(usr))
 		var/mob/living/L = usr
 		L.resist()
@@ -355,14 +346,11 @@
 	name = "storage"
 
 /obj/screen/storage/Click(location, control, params)
-	if(usr.client && usr.client.prefs.afreeze)
-		to_chat(usr.client, "<span class='userdanger'>You are frozen by an administrator.</span>")
-		return 1
 	if(world.time <= usr.next_move)
 		return 1
-	if(usr.stat || usr.paralysis || usr.stunned || usr.weakened)
+	if(usr.stat || usr.IsUnconscious() || usr.IsKnockdown() || usr.IsStun())
 		return 1
-	if (istype(usr.loc,/obj/mecha)) // stops inventory actions in a mech
+	if (istype(usr.loc, /obj/mecha)) // stops inventory actions in a mech
 		return 1
 	if(master)
 		var/obj/item/I = usr.get_active_held_item()
@@ -376,9 +364,6 @@
 	icon_state = "act_throw_off"
 
 /obj/screen/throw_catch/Click()
-	if(usr.client && usr.client.prefs.afreeze)
-		to_chat(usr.client, "<span class='userdanger'>You are frozen by an administrator.</span>")
-		return 1
 	if(iscarbon(usr))
 		var/mob/living/carbon/C = usr
 		C.toggle_throw_mode()
@@ -392,6 +377,7 @@
 /obj/screen/zone_sel/Click(location, control,params)
 	if(isobserver(usr))
 		return
+
 	var/list/PL = params2list(params)
 	var/icon_x = text2num(PL["icon-x"])
 	var/icon_y = text2num(PL["icon-y"])

@@ -4,6 +4,7 @@
 
 /datum/export/stack
 	unit_name = "sheet"
+	cost_modifiers = list("Material")
 
 /datum/export/stack/get_amount(obj/O)
 	var/obj/item/stack/S = O
@@ -16,7 +17,7 @@
 
 /datum/export/stack/skin
 	unit_name = ""
-
+	cost_modifiers = list("Food", "Medical")
 // Monkey hide. Cheap.
 /datum/export/stack/skin/monkey
 	cost = 150
@@ -26,7 +27,7 @@
 // Human skin. Illegal
 /datum/export/stack/skin/human
 	cost = 2000
-	contraband = 1
+	contraband = TRUE
 	unit_name = "piece"
 	message = "of human skin"
 	export_types = list(/obj/item/stack/sheet/animalhide/human)
@@ -40,14 +41,14 @@
 // Cat hide. Just in case Runtime is catsploding again.
 /datum/export/stack/skin/cat
 	cost = 2000
-	contraband = 1
+	contraband = TRUE
 	unit_name = "cat hide"
 	export_types = list(/obj/item/stack/sheet/animalhide/cat)
 
 // Corgi hide. You monster.
 /datum/export/stack/skin/corgi
 	cost = 2500
-	contraband = 1
+	contraband = TRUE
 	unit_name = "corgi hide"
 	export_types = list(/obj/item/stack/sheet/animalhide/corgi)
 
@@ -79,8 +80,7 @@
 	message = "of reinforced glass"
 	export_types = list(/obj/item/stack/sheet/rglass)
 
-// Bluespace Polycrystals. About as common on the asteroid as
-
+// Bluespace Polycrystals. Uncommon.
 /datum/export/stack/bscrystal
 	cost = 750
 	message = "of bluespace crystals"
@@ -121,14 +121,14 @@
 	message = "of alien alloy"
 	export_types = list(/obj/item/stack/sheet/mineral/abductor)
 
-// Adamantine. Does not occur naurally.
+// Adamantine. Does not occur naturally.
 /datum/export/stack/adamantine
 	unit_name = "bar"
 	cost = 7500
 	message = "of adamantine"
 	export_types = list(/obj/item/stack/sheet/mineral/adamantine)
 
-// Mythril. Does not occur naurally.
+// Mythril. Does not occur naturally.
 /datum/export/stack/mythril
 	cost = 15000
 	message = "of mythril"

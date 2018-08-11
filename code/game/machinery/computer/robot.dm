@@ -6,7 +6,7 @@
 	desc = "Used to remotely lockdown or detonate linked Cyborgs."
 	icon_screen = "robot"
 	icon_keyboard = "rd_key"
-	req_access = list(GLOB.access_robotics)
+	req_access = list(ACCESS_ROBOTICS)
 	circuit = /obj/item/weapon/circuitboard/computer/robotics
 	var/temp = null
 
@@ -133,7 +133,7 @@
 					R.SetLockdown(!R.lockcharge)
 					to_chat(R, "[!R.lockcharge ? "<span class='notice'>Your lockdown has been lifted!" : "<span class='alert'>You have been locked down!"]</span>")
 					if(R.connected_ai)
-						to_chat(R.connected_ai, "[!R.lockcharge ? "<span class='notice'>NOTICE - Cyborg lockdown lifted" : "<span class='alert'>ALERT - Cyborg lockdown detected"]: <a href='?src=\ref[R.connected_ai];track=[html_encode(R.name)]'>[R.name]</a></span><br>")
+						to_chat(R.connected_ai, "[!R.lockcharge ? "<span class='notice'>NOTICE - Cyborg lockdown lifted" : "<span class='alert'>ALERT - Cyborg lockdown detected"]: <a href='?src=\ref[R.connected_ai];track=[rhtml_encode(R.name)]'>[R.name]</a></span><br>")
 
 		else
 			to_chat(usr, "<span class='danger'>Access Denied.</span>")
@@ -158,15 +158,19 @@
 
 	else if (href_list["killdrone"])
 		if(src.allowed(usr))
-			var/mob/living/simple_animal/drone/D = locate(href_list["killdrone"])
+			var/mob/living/simple_animal/drone/D = locate(href_list["killdrone"]) in GLOB.mob_list
 			if(D.hacked)
 				to_chat(usr, "<span class='danger'>ERROR: [D] is not responding to external commands.</span>")
 			else
+				var/turf/T = get_turf(D)
+				message_admins("[ADMIN_LOOKUPFLW(usr)] detonated [key_name_admin(D)][ADMIN_JMP(T)]!")
+				log_game("[key_name(usr)] detonated [key_name(D)]!")
 				var/datum/effect_system/spark_spread/s = new /datum/effect_system/spark_spread
 				s.set_up(3, 1, D)
 				s.start()
 				D.visible_message("<span class='danger'>\the [D] self destructs!</span>")
 				D.gib()
+
 
 	src.updateUsrDialog()
 	return

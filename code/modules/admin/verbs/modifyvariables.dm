@@ -30,7 +30,7 @@ GLOBAL_PROTECT(VVpixelmovement)
 	else if (isloc(var_value))
 		. = VV_ATOM_REFERENCE
 
-	else if (istype(var_value,/client))
+	else if (istype(var_value, /client))
 		. = VV_CLIENT
 
 	else if (istype(var_value, /datum))
@@ -44,7 +44,7 @@ GLOBAL_PROTECT(VVpixelmovement)
 		else
 			. = VV_TYPE
 
-	else if (istype(var_value,/list))
+	else if (islist(var_value))
 		. = VV_LIST
 
 	else if (isfile(var_value))
@@ -481,7 +481,7 @@ GLOBAL_PROTECT(VVpixelmovement)
 				if (O.vv_edit_var(objectvar, L))
 					to_chat(src, "Your edit was rejected by the object.")
 					return
-			log_world("### ListVarEdit by [src]: [O.type] [objectvar]: REMOVED=[html_encode("[original_var]")]")
+			log_world("### ListVarEdit by [src]: [O.type] [objectvar]: REMOVED=[rhtml_encode("[original_var]")]")
 			log_admin("[key_name(src)] modified [original_name]'s [objectvar]: REMOVED=[original_var]")
 			message_admins("[key_name_admin(src)] modified [original_name]'s [objectvar]: REMOVED=[original_var]")
 			return
@@ -528,7 +528,7 @@ GLOBAL_PROTECT(VVpixelmovement)
 		variable = input("Which var?","Var") as null|anything in names
 		if(!variable)
 			return
-	
+
 	if(!O.can_vv_get(variable))
 		return
 
@@ -594,7 +594,7 @@ GLOBAL_PROTECT(VVpixelmovement)
 
 	switch(class)
 		if(VV_LIST)
-			if(!istype(var_value,/list))
+			if(!islist(var_value))
 				mod_list(list(), O, original_name, variable)
 
 			mod_list(var_value, O, original_name, variable)
@@ -612,7 +612,7 @@ GLOBAL_PROTECT(VVpixelmovement)
 	if (O.vv_edit_var(variable, var_new) == FALSE)
 		to_chat(src, "Your edit was rejected by the object.")
 		return
-	log_world("### VarEdit by [src]: [O.type] [variable]=[html_encode("[var_new]")]")
+	log_world("### VarEdit by [src]: [O.type] [variable]=[rhtml_encode("[var_new]")]")
 	log_admin("[key_name(src)] modified [original_name]'s [variable] to [var_new]")
 	var/msg = "[key_name_admin(src)] modified [original_name]'s [variable] to [var_new]"
 	message_admins(msg)

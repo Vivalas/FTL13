@@ -16,6 +16,8 @@
 
 #define TIMER_NO_INVOKE_WARNING 600 //number of byond ticks that are allowed to pass before the timer subsystem thinks it hung on something
 
+#define TIMER_ID_NULL -1
+
 //For servers that can't do with any additional lag, set this to none in flightpacks.dm in subsystem/processing.
 #define FLIGHTSUIT_PROCESSING_NONE 0
 #define FLIGHTSUIT_PROCESSING_FULL 1
@@ -52,19 +54,19 @@
 #define INIT_ORDER_ATOMS 50
 #define INIT_ORDER_LANGUAGE 40
 #define INIT_ORDER_MACHINES 30
-#define INIT_ORDER_SHUTTLE 20
 #define INIT_ORDER_TIMER 10
 #define INIT_ORDER_DEFAULT 0
 #define INIT_ORDER_AIR -10
-#define INIT_ORDER_MINIMAP -20
-#define INIT_ORDER_ASSETS -30
-#define INIT_ORDER_ICON_SMOOTHING -40
-#define INIT_ORDER_OVERLAY -50
-#define INIT_ORDER_XKEYSCORE -60
-#define INIT_ORDER_STICKY_BAN -70
-#define INIT_ORDER_LIGHTING -80
-#define INIT_ORDER_SQUEAK -90
-#define INIT_ORDER_PERSISTENCE -100
+#define INIT_ORDER_SHUTTLE -20
+#define INIT_ORDER_MINIMAP -30
+#define INIT_ORDER_ASSETS -40
+#define INIT_ORDER_ICON_SMOOTHING -50
+#define INIT_ORDER_OVERLAY -60
+#define INIT_ORDER_XKEYSCORE -70
+#define INIT_ORDER_STICKY_BAN -80
+#define INIT_ORDER_LIGHTING -90
+#define INIT_ORDER_SQUEAK -100
+#define INIT_ORDER_PERSISTENCE -110
 
 // SS runlevels
 

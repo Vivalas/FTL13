@@ -9,15 +9,13 @@
 	desc = "It's an underfloor wiring terminal for power equipment."
 	level = 1
 	var/obj/machinery/power/master = null
-	anchored = 1
+	anchored = TRUE
 	layer = WIRE_TERMINAL_LAYER //a bit above wires
 
-
-/obj/machinery/power/terminal/New()
-	..()
+/obj/machinery/power/terminal/Initialize()
+	. = ..()
 	var/turf/T = src.loc
 	if(level==1) hide(T.intact)
-	return
 
 /obj/machinery/power/terminal/Destroy()
 	if(master)
@@ -58,7 +56,7 @@
 			user.visible_message("[user.name] dismantles the power terminal from [master].", \
 								"<span class='notice'>You begin to cut the cables...</span>")
 
-			playsound(src.loc, 'sound/items/Deconstruct.ogg', 50, 1)
+			playsound(src.loc, 'sound/items/deconstruct.ogg', 50, 1)
 			if(do_after(user, 50*W.toolspeed, target = src))
 				if(!master || master.can_terminal_dismantle())
 					if(prob(50) && electrocute_mob(user, powernet, src, 1, TRUE))

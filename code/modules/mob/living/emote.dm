@@ -62,8 +62,9 @@
 
 /datum/emote/living/collapse/run_emote(mob/user, params)
 	. = ..()
-	if(.)
-		user.Paralyse(2)
+	if(. && isliving(user))
+		var/mob/living/L = user
+		L.Unconscious(40)
 
 /datum/emote/living/cough
 	key = "cough"
@@ -110,8 +111,9 @@
 
 /datum/emote/living/faint/run_emote(mob/user, params)
 	. = ..()
-	if(.)
-		user.SetSleeping(10)
+	var/mob/living/L = user // Suppose to be located just inside the if loop but that causes infinte cross reference loop. This doesnt.
+	if(. && isliving(user))
+		L.SetSleeping(200)
 
 /datum/emote/living/flap
 	key = "flap"
@@ -247,6 +249,18 @@
 	message_mime = "acts out a scream!"
 	emote_type = EMOTE_AUDIBLE
 
+/datum/emote/living/scream/run_emote(mob/user)
+	. = ..()
+	if(. && ishuman(user))
+		var/mob/living/carbon/human/H = user
+		if(H.dna.species.can_scream)
+			if(prob(0.5))
+				playsound(H.loc, 'sound/voice/human/wilhelm_scream.ogg', 75)
+			if(!H.dna.species.female_scream_sounds || H.gender == MALE)
+				playsound(H.loc, pick(H.dna.species.scream_sounds), 75)
+			else
+				playsound(H.loc, pick(H.dna.species.female_scream_sounds), 75)
+
 /datum/emote/living/scowl
 	key = "scowl"
 	key_third_person = "scowls"
@@ -329,8 +343,9 @@
 
 /datum/emote/living/surrender/run_emote(mob/user, params)
 	. = ..()
-	if(.)
-		user.Weaken(20)
+	if(. && isliving(user))
+		var/mob/living/L = user
+		L.Knockdown(200)
 
 /datum/emote/living/sway
 	key = "sway"
@@ -466,7 +481,7 @@
 
 /datum/emote/living/spin/run_emote(mob/user)
 	user.spin(20, 1)
-	if(istype(user, /mob/living/silicon/robot))
+	if(iscyborg(user))
 		var/mob/living/silicon/robot/R = user
 		if(R.buckled_mobs)
 			for(var/mob/M in R.buckled_mobs)
@@ -475,3 +490,17 @@
 				else
 					R.unbuckle_all_mobs()
 	..()
+
+/datum/emote/living/circle
+	key = "circle"
+	key_third_person = "circles"
+	restraint_check = TRUE
+
+/datum/emote/living/circle/run_emote(mob/user, params)
+	. = ..()
+	var/obj/item/weapon/circlegame/N = new(user)
+	if(user.put_in_hands(N))
+		to_chat(user, "<span class='notice'>You make a circle with your hand.</span>")
+	else
+		qdel(N)
+		to_chat(user, "<span class='warning'>You don't have any free hands to make a circle with.</span>")

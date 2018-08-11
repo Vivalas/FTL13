@@ -6,9 +6,76 @@
 	permeability_coefficient = 0.01
 	armor = list(melee = 30, bullet = 20, laser = 20, energy = 20, bomb = 20, bio = 20, rad = 20, fire = 100, acid = 100)
 	strip_delay = 50
-	put_on_delay = 50
+	equip_delay_other = 50
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 	dog_fashion = /datum/dog_fashion/head/blue_wizard
+
+/obj/item/clothing/head/wizard/dark_witch
+	name = "dark witch hat"
+	desc = "Strange-looking hat-wear that most certainly belongs to a powerful magic user."
+	icon_state = "dark_witch"
+	dog_fashion = null
+
+/obj/item/clothing/head/wizard/steampunk_witch
+	name = "steampunk witch hat"
+	desc = "Strange-looking hat-wear that most certainly belongs to a powerful magic user."
+	icon_state = "steampunk_witch"
+	dog_fashion = null
+
+/obj/item/clothing/head/wizard/classic_witch
+	name = "classic witch hat"
+	desc = "Strange-looking hat-wear that most certainly belongs to a powerful magic user."
+	icon_state = "classic_witch"
+	dog_fashion = null
+
+/obj/item/clothing/head/wizard/healer_witch
+	name = "healing witch hat"
+	desc = "Strange-looking hat-wear that most certainly belongs to a powerful magic user."
+	icon_state = "healer_witch"
+	dog_fashion = null
+
+/obj/item/clothing/head/wizard/cutie_witch
+	name = "cutie witch hat"
+	desc = "Strange-looking hat-wear that most certainly belongs to a powerful magic user."
+	icon_state = "cutie_witch"
+	dog_fashion = null
+
+/obj/item/clothing/head/wizard/shy_witch
+	name = "shy witch hat"
+	desc = "Strange-looking hat-wear that most certainly belongs to a powerful magic user."
+	icon_state = "shy_witch"
+	dog_fashion = null
+
+/obj/item/clothing/head/wizard/sexy_witch
+	name = "sexy witch hat"
+	desc = "Strange-looking hat-wear that most certainly belongs to a powerful magic user."
+	icon_state = "sexy_witch"
+	dog_fashion = null
+
+/obj/item/clothing/head/wizard/bunny_witch
+	name = "bunny witch hat"
+	desc = "Strange-looking hat-wear that most certainly belongs to a powerful magic user."
+	icon_state = "bunny_witch"
+	dog_fashion = null
+
+/obj/item/clothing/head/wizard/potions_witch
+	name = "potions witch hat"
+	desc = "Strange-looking hat-wear that most certainly belongs to a powerful magic user."
+	icon_state = "potions_witch"
+	dog_fashion = null
+
+/obj/item/clothing/head/wizard/syndie_witch
+	name = "syndicate witch hat"
+	desc = "Strange-looking hat-wear that most certainly belongs to a powerful magic user."
+	icon_state = "syndie_witch"
+	dog_fashion = null
+
+/obj/item/clothing/head/wizard/nt_witch
+	name = "nanotrasen witch hat"
+	desc = "Strange-looking hat-wear that most certainly belongs to a powerful magic user."
+	icon_state = "nt_witch"
+	dog_fashion = null
+
 
 /obj/item/clothing/head/wizard/red
 	name = "red wizard hat"
@@ -70,7 +137,7 @@
 	allowed = list(/obj/item/weapon/teleportation_scroll)
 	flags_inv = HIDEJUMPSUIT
 	strip_delay = 50
-	put_on_delay = 50
+	equip_delay_other = 50
 	resistance_flags = FIRE_PROOF | ACID_PROOF
 
 /obj/item/clothing/suit/wizrobe/red
@@ -78,6 +145,11 @@
 	desc = "A magnificent red gem-lined robe that seems to radiate power."
 	icon_state = "redwizard"
 	item_state = "redwizrobe"
+
+/obj/item/clothing/suit/wizrobe/sexy
+	name = "sexy wizard robe"
+	desc = "A magnificent and sexy gem-lined robe that seems to radiate power."
+	icon_state = "sexywitch"
 
 /obj/item/clothing/suit/wizrobe/yellow
 	name = "yellow wizard robe"
@@ -169,7 +241,7 @@
 		return
 
 	usr.say("Rise, my creation! Off your page into this realm!")
-	playsound(src.loc, 'sound/magic/Summon_Magic.ogg', 50, 1, 1)
+	playsound(src.loc, 'sound/magic/summon_magic.ogg', 50, 1, 1)
 	var/mob/living/M = new /mob/living/simple_animal/hostile/stickman(get_turf(usr))
 	var/list/factions = usr.faction
 	M.faction = factions

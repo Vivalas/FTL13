@@ -27,7 +27,7 @@
 
 /mob/living/carbon/alien/humanoid/movement_delay()
 	. = ..()
-	. += move_delay_add + config.alien_delay + sneaking	//move_delay_add is used to slow aliens with stuns
+	. += move_delay_add + config.alien_delay + sneaking //move_delay_add is used to slow aliens with stun
 
 /mob/living/carbon/alien/humanoid/restrained(ignore_grab)
 	. = handcuffed
@@ -119,5 +119,5 @@
 
 /mob/living/carbon/alien/humanoid/check_breath(datum/gas_mixture/breath)
 	if(breath && breath.total_moles() > 0 && !sneaking)
-		playsound(get_turf(src), pick('sound/voice/lowHiss2.ogg', 'sound/voice/lowHiss3.ogg', 'sound/voice/lowHiss4.ogg'), 50, 0, -5)
+		playsound(get_turf(src), pick('sound/voice/lowhiss2.ogg', 'sound/voice/lowhiss3.ogg', 'sound/voice/lowhiss4.ogg'), 50, 0, -5)
 	..()

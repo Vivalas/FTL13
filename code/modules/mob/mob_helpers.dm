@@ -62,7 +62,7 @@
 		return 0
 
 /proc/stars(n, pr)
-	n = html_encode(n)
+	n = rhtml_encode(n)
 	if (pr == null)
 		pr = 25
 	if (pr <= 0)
@@ -340,6 +340,9 @@ It's fairly easy to fix if dealing with single letters but not so much with comp
 		var/mob/B = A
 		return	B.eye_blind
 	return 0
+
+/mob/proc/hallucinating()
+	return FALSE
 
 /proc/is_special_character(mob/M) // returns 1 for special characters and 2 for heroes of gamemode //moved out of admins.dm because things other than admin procs were calling this.
 	if(!SSticker.HasRoundStarted())

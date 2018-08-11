@@ -38,6 +38,7 @@ SUBSYSTEM_DEF(shuttle)
 	var/list/shoppinglist = list()
 	var/list/requestlist = list()
 	var/list/orderhistory = list()
+	var/has_calculated = FALSE
 
 	var/obj/docking_port/mobile/ftl/ftl
 
@@ -67,14 +68,18 @@ SUBSYSTEM_DEF(shuttle)
 		if(!P.contains)
 			continue
 		supply_packs[P.type] = P
+		CHECK_TICK
 
-	// Initialize ftl13 station stocks
-	for(var/datum/star_system/system in SSstarmap.star_systems)
-		for(var/datum/planet/P in system.planets)
-			if(!P.station)
-				continue
-			P.station.generate()
-			CHECK_TICK
+// Initialize ftl13 station stocks/ station modules
+	for(var/i in SSstarmap.stations)
+		var/datum/space_station/station = i
+		var/module = pickweight(SSstarmap.station_modules)
+		station.module = new module(station)
+		station.generate()
+		CHECK_TICK
+
+	setupExports()	//makes sure it's actually set up at round start so recalculate_prices works correctly
+	recalculate_prices(SSstarmap.current_planet.station)	//starmap generates before shuttle does
 
 	setup_transit_zone()
 	initial_move()
@@ -90,11 +95,12 @@ SUBSYSTEM_DEF(shuttle)
 	// transit zone
 	var/turf/A = get_turf(GLOB.transit_markers[1])
 	var/turf/B = get_turf(GLOB.transit_markers[2])
-	for(var/i in block(A, B))
-		var/turf/T = i
-		T.ChangeTurf(/turf/open/space)
-		transit_turfs += T
-		T.flags |= UNUSED_TRANSIT_TURF
+	for(var/datum/sub_turf_block/STB in split_block(A, B))
+		for(var/turf/T in STB.return_list())
+			T.ChangeTurf(/turf/open/space)
+			transit_turfs += T
+			T.flags |= UNUSED_TRANSIT_TURF
+			CHECK_TICK
 
 #ifdef HIGHLIGHT_DYNAMIC_TRANSIT
 /datum/controller/subsystem/shuttle/proc/color_space()
@@ -205,7 +211,7 @@ SUBSYSTEM_DEF(shuttle)
 			to_chat(user, "The escape pods have been disabled by Centcom.")
 			return
 
-	call_reason = trim(html_encode(call_reason))
+	call_reason = trim(rhtml_encode(call_reason))
 
 	if(length(call_reason) < CALL_SHUTTLE_REASON_LENGTH && seclevel2num(get_security_level()) > SEC_LEVEL_GREEN)
 		to_chat(user, "You must provide a reason.")
@@ -221,6 +227,9 @@ SUBSYSTEM_DEF(shuttle)
 			emergency.request(null, signal_origin, html_decode(emergency_reason), 0)
 
 	log_game("[key_name(user)] has called the shuttle.")
+	if(call_reason)
+		SSblackbox.add_details("shuttle_reason", call_reason)
+		log_game("Shuttle call reason: [call_reason]")
 	message_admins("[key_name_admin(user)] has called the shuttle. (<A HREF='?_src_=holder;trigger_centcom_recall=1'>TRIGGER CENTCOM RECALL</A>)")
 
 	for(var/obj/machinery/firealarm/FA in GLOB.machines)
@@ -228,13 +237,13 @@ SUBSYSTEM_DEF(shuttle)
 			FA.update_icon()
 
 /datum/controller/subsystem/shuttle/proc/centcom_recall(old_timer, admiral_message)
-	if(emergency.mode != SHUTTLE_CALL || emergency.timer != old_timer)
+	if(emergency.mode != SHUTTLE_DOCKED || emergency.timer != old_timer)
 		return
 	emergency.cancel()
 
 	if(!admiral_message)
 		admiral_message = pick(GLOB.admiral_messages)
-	var/intercepttext = "<font size = 3><b>NanoTrasen Update</b>: Request For Evacuation.</font><hr>\
+	var/intercepttext = "<font size = 3><b>Nanotrasen Update</b>: Request For Evacuation.</font><hr>\
 						To whom it may concern:<br><br>\
 						We have taken note of the situation upon [station_name()] and have come to the \
 						conclusion that it does not warrant the abandonment of the station.<br>\
@@ -335,7 +344,7 @@ SUBSYSTEM_DEF(shuttle)
 		emergency.setTimer(emergencyDockTime)
 		priority_announce("Hostile environment resolved. \
 			You have 3 minutes to board the Emergency Shuttle.",
-			null, 'sound/AI/shuttledock.ogg', "Priority")
+			null, 'sound/ai/shuttledock.ogg', "Priority")
 
 //try to move/request to dockHome if possible, otherwise dockAway. Mainly used for admin buttons
 /datum/controller/subsystem/shuttle/proc/toggleShuttle(shuttleId, dockHome, dockAway, timed)
@@ -360,14 +369,14 @@ SUBSYSTEM_DEF(shuttle)
 	var/obj/docking_port/stationary/D = getDock(dockId)
 
 	if(!M)
-		return 1
+		return SHUTTLE_INVALID_SHUTTLE
 	if(timed)
 		if(M.request(D))
-			return 2
+			return SHUTTLE_DOCK_IN_USE
 	else
 		if(M.dock(D))
-			return 2
-	return 0	//dock successful
+			return SHUTTLE_DOCK_IN_USE
+	return SHUTTLE_GOOD_TO_GO	//dock successful
 
 /datum/controller/subsystem/shuttle/proc/request_transit_dock(obj/docking_port/mobile/M)
 	if(!istype(M))
@@ -501,7 +510,7 @@ SUBSYSTEM_DEF(shuttle)
 
 	for(var/i in new_transit_dock.assigned_turfs)
 		var/turf/T = i
-		T.ChangeTurf(transit_path, FALSE, FALSE, TRUE)
+		T.ChangeTurf(transit_path)
 		T.flags &= ~(UNUSED_TRANSIT_TURF)
 
 	M.assigned_transit = new_transit_dock
@@ -513,14 +522,6 @@ SUBSYSTEM_DEF(shuttle)
 			continue
 		M.dockRoundstart()
 		CHECK_TICK
-	var/obj/docking_port/mobile/ftl/ftl = SSshuttle.getShuttle("ftl")
-	if(!ftl)
-		return
-	var/obj/docking_port/stationary/dest = SSstarmap.current_planet.main_dock
-	for(var/obj/docking_port/stationary/ftl_encounter/D in SSstarmap.current_planet.docks)
-		if(D.encounter_type == "trade")
-			dest = D
-	ftl.dock(dest)
 
 /datum/controller/subsystem/shuttle/Recover()
 	if (istype(SSshuttle.mobile))
@@ -551,11 +552,16 @@ SUBSYSTEM_DEF(shuttle)
 
 /datum/controller/subsystem/shuttle/proc/is_in_shuttle_bounds(atom/A)
 	var/area/current = get_area(A)
-	if(istype(current, /area/shuttle) && !istype(current,/area/shuttle/transit))
+	if(istype(current, /area/shuttle) && !istype(current, /area/shuttle/transit))
 		return TRUE
 	for(var/obj/docking_port/mobile/M in mobile)
 		if(M.is_in_shuttle_bounds(A))
 			return TRUE
+
+/datum/controller/subsystem/shuttle/proc/get_containing_shuttle(atom/A)
+	for(var/obj/docking_port/mobile/M in mobile)
+		if(M.is_in_shuttle_bounds(A))
+			return M
 
 /datum/controller/subsystem/shuttle/proc/generate_pod_landings()
 	var/obj/docking_port/stationary/L
@@ -571,11 +577,13 @@ SUBSYSTEM_DEF(shuttle)
 		if(!istype(P))
 			continue
 
-		var/turf/T = locate(rand(0,world.maxx-50),rand(0,world.maxy-50),L.z)
+		var/turf/T = locate(rand(25,world.maxx-50),rand(25,world.maxy-50),L.z) //Prevents shuttles landing too near the edge of the map
 		if(!T)
 			continue
 
 		var/obj/docking_port/stationary/S = new(T)
 		S.id = "[P.id]_away"
+		S.dwidth = 20 //40x20 shuttle size, fits most shuttles
+		S.width = 40
+		S.height = 20
 		message_admins("Generated a pod landing area with ID: [S.id]")
-

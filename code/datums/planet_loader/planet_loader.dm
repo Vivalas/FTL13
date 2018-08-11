@@ -23,25 +23,23 @@
 			GLOB.maploader.load_map(file, 1, 1, z_level)
 		else
 			return 0
-	SSmapping.mineral_spawn_override = null
 
-	for(var/obj/effect/landmark/L in GLOB.landmarks_list)
+	for(var/obj/effect/landmark/dock_spawn/L in GLOB.landmarks_list)
 		if(copytext(L.name, 1, 8) == "ftldock" && L.z == z_level)
-			var/docking_port_id = "ftl_z[L.z][copytext(L.name, 8)]"
-			var/obj/docking_port/stationary/ftl_encounter/D = new(L.loc)
-			D.encounter_type = copytext(L.name, 9)
-			D.id = docking_port_id
-			PL.docks |= D
-			PL.name_dock(D, D.encounter_type, params)
-			if(D.encounter_type == "main")
-				PL.main_dock = D
-			qdel(L)
+			L.load_dock(z_level, PL, params=null)
 
+			qdel(L)
 	add_more_shit(z_level, PL)
 
 	if(ruins_args.len)
 		seedRuins(list(z_level), ruins_args[1], ruins_args[2], ruins_args[3])
 
+	if(SSlighting.initialized)
+		SSlighting.create_all_z_lighting_objects(z_level)
+	SSmapping.initialize_z_level(z_level)
 	smooth_zlevel(z_level)
+
+	SSmapping.mineral_spawn_override = null
+
 
 	return 1

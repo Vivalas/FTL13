@@ -49,7 +49,7 @@
 			return
 	return 1
 
-/obj/machinery/mac_barrel/proc/attempt_fire(var/datum/component/target_component)
+/obj/machinery/mac_barrel/proc/attempt_fire(var/datum/ship_component/target_component,var/shooter)
 	if(!can_fire())
 		return
 	if(prob(5))
@@ -71,6 +71,7 @@
 			if(breech.loaded_shell.armed)
 				M.attack_data = breech.loaded_shell.attack_data
 			M.target = target_component
+			M.shooter = shooter
 			M.setDir(src,dir)
 			M.starting = src.loc
 			M.fire()
@@ -88,7 +89,7 @@
 			A.forceMove(get_step(src,dir))
 			if(istype(A,/mob/living/))
 				var/mob/living/M = A
-				M.Weaken(5)
+				M.Knockdown(100)
 			var/atom/throw_at = get_edge_target_turf(src, dir)
 			A.throw_at(throw_at, 500, 1)
 
@@ -123,11 +124,11 @@
 		//Flash
 		if(M.flash_act(affect_silicon = 1))
 			M.Stun(max(10/max(1,distance), 3))
-			M.Weaken(max(10/max(1,distance), 3))
+			M.Knockdown(max(10/max(1,distance), 3))
 		//Bang
 		if(!distance || loc == M || loc == M.loc)	//Stop allahu akbarring rooms with this.
-			M.Stun(10)
-			M.Weaken(10)
+			M.Stun(200)
+			M.Knockdown(200)
 			M.soundbang_act(1, 10, 10, 15)
 
 		else
@@ -151,7 +152,7 @@
 	var/list/loaded_objects = list()
 	var/obj/structure/shell/loaded_shell = null
 	var/obj/item/weapon/twohanded/required/firing_actuator/actuator = new
-	flags = OPENCONTAINER
+	container_type = OPENCONTAINER
 	var/charge_process = 100
 
 	active_power_usage = 80000

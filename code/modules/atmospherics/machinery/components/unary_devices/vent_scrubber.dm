@@ -5,15 +5,16 @@
 	name = "air scrubber"
 	desc = "Has a valve and pump attached to it."
 	icon_state = "scrub_map"
-	use_power = 1
+	use_power = IDLE_POWER_USE
 	idle_power_usage = 10
 	active_power_usage = 60
 	can_unwrench = 1
-	welded = 0
+	welded = FALSE
 	level = 1
+	layer = GAS_SCRUBBER_LAYER
 
 	var/id_tag = null
-	var/on = 0
+	var/on = FALSE
 	var/scrubbing = SCRUBBING //0 = siphoning, 1 = scrubbing
 
 	var/scrub_O2 = 0
@@ -46,13 +47,16 @@
 		assign_uid()
 		id_tag = num2text(uid)
 
+/obj/machinery/atmospherics/components/unary/vent_scrubber/on
+	on = TRUE
+	icon_state = "scrub_map_on"
+
 /obj/machinery/atmospherics/components/unary/vent_scrubber/Destroy()
 	var/area/A = get_area(src)
 	A.air_scrub_names -= id_tag
 	A.air_scrub_info -= id_tag
 
-	if(SSradio)
-		SSradio.remove_object(src,frequency)
+	SSradio.remove_object(src,frequency)
 	radio_connection = null
 
 	for(var/I in adjacent_turfs)
@@ -110,6 +114,10 @@
 
 	if(scrubbing & SCRUBBING)
 		icon_state = "scrub_on"
+		if(widenet)
+			icon_state = "scrub_wide"
+		else
+			icon_state = "scrub_on"
 	else //scrubbing == SIPHONING
 		icon_state = "scrub_purge"
 
@@ -168,7 +176,7 @@
 	if(stat & (NOPOWER|BROKEN))
 		return
 	if (!NODE1)
-		on = 0
+		on = FALSE
 	if(!on || welded)
 		return 0
 	scrub(loc)
@@ -210,12 +218,12 @@
 				filtered_out.assert_gas("o2")
 				filtered_out.gases["o2"][MOLES] = removed_gases["o2"][MOLES]
 				removed.gases["o2"][MOLES] = 0
-				
+
 			if(scrub_N2 && removed_gases["n2"])
 				filtered_out.assert_gas("n2")
 				filtered_out.gases["n2"][MOLES] = removed_gases["n2"][MOLES]
 				removed.gases["n2"][MOLES] = 0
-			
+
 			if(scrub_Toxins && removed_gases["plasma"])
 				filtered_out.assert_gas("plasma")
 				filtered_gases["plasma"][MOLES] = removed_gases["plasma"][MOLES]
@@ -240,12 +248,12 @@
 				filtered_out.assert_gas("bz")
 				filtered_out.gases["bz"][MOLES] = removed_gases["bz"][MOLES]
 				removed.gases["bz"][MOLES] = 0
-				
+
 			if(scrub_hydrogen && removed_gases["hydrogen"])
 				filtered_out.assert_gas("hydrogen")
 				filtered_out.gases["hydrogen"][MOLES] = removed_gases["hydrogen"][MOLES]
 				removed.gases["hydrogen"][MOLES] = 0
-				
+
 			if(scrub_WaterVapor && removed_gases["water_vapor"])
 				filtered_out.assert_gas("water_vapor")
 				filtered_out.gases["water_vapor"][MOLES] = removed_gases["water_vapor"][MOLES]
@@ -320,12 +328,12 @@
 		scrub_O2 = text2num(signal.data["o2_scrub"])
 	if("toggle_o2_scrub" in signal.data)
 		scrub_O2 = !scrub_O2
-		
+
 	if("n2_scrub" in signal.data)
 		scrub_N2 = text2num(signal.data["n2_scrub"])
 	if("toggle_n2_scrub" in signal.data)
 		scrub_N2 = !scrub_N2
-		
+
 	if("co2_scrub" in signal.data)
 		scrub_CO2 = text2num(signal.data["co2_scrub"])
 	if("toggle_co2_scrub" in signal.data)
@@ -345,12 +353,12 @@
 		scrub_BZ = text2num(signal.data["bz_scrub"])
 	if("toggle_bz_scrub" in signal.data)
 		scrub_BZ = !scrub_BZ
-		
+
 	if("hydrogen_scrub" in signal.data)
 		scrub_hydrogen = text2num(signal.data["hydrogen_scrub"])
 	if("toggle_hydrogen_scrub" in signal.data)
 		scrub_hydrogen = !scrub_hydrogen
-		
+
 	if("water_vapor_scrub" in signal.data)
 		scrub_WaterVapor = text2num(signal.data["water_vapor_scrub"])
 	if("toggle_water_vapor_scrub" in signal.data)
@@ -386,13 +394,13 @@
 			if(do_after(user, 20*W.toolspeed, target = src))
 				if(!src || !WT.isOn())
 					return
-				playsound(src.loc, 'sound/items/Welder2.ogg', 50, 1)
+				playsound(src.loc, 'sound/items/welder2.ogg', 50, 1)
 				if(!welded)
 					user.visible_message("[user] welds the scrubber shut.","You weld the scrubber shut.", "You hear welding.")
-					welded = 1
+					welded = TRUE
 				else
 					user.visible_message("[user] unwelds the scrubber.", "You unweld the scrubber.", "You hear welding.")
-					welded = 0
+					welded = FALSE
 				update_icon()
 				pipe_vision_img = image(src, loc, layer = ABOVE_HUD_LAYER, dir = dir)
 				pipe_vision_img.plane = ABOVE_HUD_PLANE
@@ -414,7 +422,7 @@
 	if(!welded || !(do_after(user, 20, target = src)))
 		return
 	user.visible_message("[user] furiously claws at [src]!", "You manage to clear away the stuff blocking the scrubber.", "You hear loud scraping noises.")
-	welded = 0
+	welded = FALSE
 	update_icon()
 	pipe_vision_img = image(src, loc, layer = ABOVE_HUD_LAYER, dir = dir)
 	pipe_vision_img.plane = ABOVE_HUD_PLANE

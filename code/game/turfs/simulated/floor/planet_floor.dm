@@ -1,6 +1,7 @@
 /turf/open/floor/plating/asteroid/planet
 	icon = 'icons/turf/floors/planet.dmi'
 	planetary_atmos = TRUE
+	initial_gas_mix = "o2=22;n2=82;TEMP=293.15"
 	baseturf = /turf/open/floor/plating/asteroid/planet/sand
 	smooth = SMOOTH_TRUE | SMOOTH_CUSTOM
 	var/edge_layer = 0
@@ -52,12 +53,14 @@
 
 /turf/open/floor/plating/asteroid/planet/sand
 	name = "sand"
+	baseturf = /turf/open/floor/plating/asteroid/planet/sand
 	environment_type = "sand"
 	icon_state = "sand_0"
 	edge_layer = 0
 
 /turf/open/floor/plating/asteroid/planet/grass
 	name = "grass"
+	baseturf = /turf/open/floor/plating/asteroid/planet/grass
 	environment_type = "grass"
 	icon_state = "grass_0"
 	edge_layer = 1
@@ -70,7 +73,7 @@
 
 /turf/open/floor/plating/asteroid/planet/snow
 	name = "snow"
-	baseturf = /turf/open/floor/plating/asteroid/planet/grass
+	baseturf = /turf/open/floor/plating/asteroid/planet/snow
 	environment_type = "snow"
 	icon_state = "snow_0"
 	edge_layer = 2
@@ -78,6 +81,7 @@
 	variant_amount = 1
 /turf/open/floor/plating/asteroid/planet/water
 	name = "water"
+	baseturf = /turf/open/floor/plating/asteroid/planet/water
 	environment_type = "water"
 	icon_state = "water_0"
 	edge_layer = 50
@@ -122,9 +126,9 @@
 		AM = find_type_in_direction(src, direction)
 		if(AM == NULLTURF_BORDER)
 			if((smooth & SMOOTH_BORDER))
-				adjacencies |= to_chat(1, direction)
+				adjacencies |= 1 << direction
 		else if((AM && !istype(AM)) || (istype(AM) && AM.anchored) )
-			adjacencies |= to_chat(1, direction)
+			adjacencies |= 1 << direction
 	var/dirs = 0
 	if(adjacencies & N_NORTH)
 		dirs |= NORTH

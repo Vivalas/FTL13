@@ -27,7 +27,7 @@
 
 /datum/round_event/ion_storm/announce()
 	if(announceEvent == ION_ANNOUNCE || (announceEvent == ION_RANDOM && prob(ionAnnounceChance)))
-		priority_announce("Ion storm detected near the ship. Please check all AI-controlled equipment for errors.", "Anomaly Alert", 'sound/AI/ionstorm.ogg')
+		priority_announce("Ion storm detected near the ship. Please check all AI-controlled equipment for errors.", "Anomaly Alert", 'sound/ai/ionstorm.ogg')
 
 
 /datum/round_event/ion_storm/start()
@@ -273,13 +273,13 @@
 				if(1) //X is the station
 					switch(rand(1,4)) //What is it Y of?
 						if(1) //It is Y of objects
-							message = "THE STATION [ionthinksof] [ionnumberbase] [ionnumbermodhalf][ionadjectiveshalf][ionobjects]"
+							message = "THE SHIP [ionthinksof] [ionnumberbase] [ionnumbermodhalf][ionadjectiveshalf][ionobjects]"
 						if(2) //It is Y of threats
-							message = "THE STATION [ionthinksof] [ionnumberbase] [ionnumbermodhalf][ionadjectiveshalf][ionthreats]"
+							message = "THE SHIP [ionthinksof] [ionnumberbase] [ionnumbermodhalf][ionadjectiveshalf][ionthreats]"
 						if(3) //It is Y of jobs
-							message = "THE STATION [ionthinksof] [ionnumberbase] [ionnumbermodhalf][ionadjectiveshalf][ioncrew1]"
+							message = "THE SHIP [ionthinksof] [ionnumberbase] [ionnumbermodhalf][ionadjectiveshalf][ioncrew1]"
 						if(4) //It is Y of abstracts
-							message = "THE STATION [ionthinksof] [ionabstract]"
+							message = "THE SHIP [ionthinksof] [ionabstract]"
 
 				if(2) //X is an area
 					switch(rand(1,4)) //What is it Y of?

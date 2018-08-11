@@ -25,7 +25,7 @@
 	unsuitable_atmos_damage = 15
 	speak_emote = list("yarrs")
 	loot = list(/obj/effect/mob_spawn/human/corpse/pirate,
-			/obj/item/weapon/melee/energy/sword/pirate)
+			/obj/item/weapon/melee/transforming/energy/sword/pirate)
 	del_on_death = 1
 	faction = list("pirate")
 
@@ -66,3 +66,14 @@
 
 /mob/living/simple_animal/hostile/pirate/space/Process_Spacemove(movement_dir = 0)
 	return 1
+
+/mob/living/simple_animal/hostile/syndicate/civilian/pirate //we should make this better in a rebase or something...
+	name = "Pirate deckhand"
+	icon_state = "pirate"
+	icon_living = "pirate"
+	loot = list(/obj/effect/mob_spawn/human/corpse/pirate)
+	faction = list("pirate")
+
+	speak_emote = list("yarrs")
+
+	upgrade_options = list(/mob/living/simple_animal/hostile/pirate = 20, /mob/living/simple_animal/hostile/pirate/ranged = 20, /mob/living/simple_animal/hostile/pirate/space = 10, /mob/living/simple_animal/hostile/pirate/space/ranged = 10)

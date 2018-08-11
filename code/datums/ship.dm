@@ -10,8 +10,10 @@
 
 	var/repair_time = 0 // same as fire rate
 	var/recharge_rate = 0 // shield points per second
+	var/shield_regen_max = 750 //Max shield generated per repair tick
 
-	var/list/components = list()
+	var/list/ship_components = list()
+
 	var/salvage_map = "placeholder.dmm"
 
 	//Boarding vars
@@ -19,10 +21,12 @@
 	var/boarding_chance = null	//chance for this ship not blowup into the pieces
 	var/crew_outfit = /datum/outfit/defender/generic 	// write /datum/outfit/defender/<your desired type listed in gamemodes\miniantags\ftl\enemy_ship\outfit>
 	var/captain_outfit = /datum/outfit/defender/command/generic	//yeah it's should be /datum/outfit/defender/[crew_outfit]/command but im to stupid to provide a better way
+	var/mob_faction = "syndicate" //Var to stop simple_mobs spawned in on ships from attacking defenders. Best placed here so pirates don't have to deal with extra hostiles on their own ship
 
 	var/list/faction //the faction the ship belongs to. Leave blank for a "neutral" ship that all factions can use. with second argument being spawn chance
+	var/hide_from_random_ships = FALSE //Prevents ships that the enemy maaaybe shoul
 
-	var/list/init_components
+	var/list/init_ship_components
 
 	var/datum/star_system/system
 	var/datum/planet/planet
@@ -87,10 +91,10 @@ GLOBAL_VAR(next_ship_id)
 	return QDEL_HINT_HARDDEL_NOW
 
 /datum/starship/proc/generate_ship() //a bit hacky but I can't think of a better way.... multidimensional lists?
-	for(var/i in init_components)
-		var/datum/component/component = SSship.cname2component(init_components[i])
-		var/datum/component/C = new component.type
-		components += C
+	for(var/i in init_ship_components)
+		var/datum/ship_component/ship_component = SSship.cname2ship_component(init_ship_components[i])
+		var/datum/ship_component/C = new ship_component.type
+		ship_components += C
 
 		var/list/coords = splittext(i,",")
 
@@ -131,6 +135,9 @@ GLOBAL_VAR(next_ship_id)
 	var/list/systems = list()
 	var/datum/star_system/capital = null
 
+	var/default_crew_outfit = /datum/outfit/defender/generic
+	var/default_captain_outfit = /datum/outfit/defender/command/generic
+
 	var/datum/starship/ship_to_build = null
 	var/next_build_time = 0
 
@@ -151,34 +158,54 @@ GLOBAL_VAR(next_ship_id)
 /datum/star_faction/solgov
 	name = "SolGov"
 	cname = "solgov"
-	relations = list("ship"=-1,"nanotrasen"=-1,"syndicate"=-1,"pirate"=0) //"ship" faction represents the ship the players are on. E.g. if you attack NT ships NT ships will attack you.
+	relations = list("ship"=-1,"nanotrasen"=-1,"syndicate"=-1,"pirate"=0,"clown"=-1) //"ship" faction represents the ship the players are on. E.g. if you attack NT ships NT ships will attack you.
+	default_crew_outfit = /datum/outfit/defender/solgov
+	default_captain_outfit = /datum/outfit/defender/command/solgov
+
 
 /datum/star_faction/nanotrasen
 	name = "Nanotrasen"
 	cname = "nanotrasen"
-	relations = list("ship"=1,"syndicate"=0,"solgov"=-1,"pirate"=0)
+	relations = list("ship"=1,"syndicate"=0,"solgov"=-1,"pirate"=0,"clown"=-1)
+	default_crew_outfit = /datum/outfit/defender/nanotrasen
+	default_captain_outfit = /datum/outfit/defender/command/nanotrasen
 
 /datum/star_faction/syndicate
 	name = "Syndicate"
 	cname = "syndicate"
-	relations = list("ship"=0,"nanotrasen"=0,"solgov"=-1,"pirate"=0)
+	relations = list("ship"=0,"nanotrasen"=0,"solgov"=-1,"pirate"=0,"clown"=-1)
+	default_crew_outfit = /datum/outfit/defender/generic
+	default_captain_outfit = /datum/outfit/defender/command/generic
 
 /datum/star_faction/pirate //arr matey get me some rum
 	name = "Pirates"
 	cname = "pirate"
-	relations = list("ship"=0,"nanotrasen"=0,"solgov"=0,"syndicate"=0)
+	relations = list("ship"=0,"nanotrasen"=0,"solgov"=0,"syndicate"=0,"clown"=-1)
+	default_crew_outfit = /datum/outfit/defender/pirate
+	default_captain_outfit = /datum/outfit/defender/command/pirate
 
 	no_economy = 1
+
+/datum/star_faction/clown
+	name = "Clown Federation"
+	cname = "clown"
+	relations = list("ship"=0,"nanotrasen"=0,"syndicate"=0,"solgov"=0,"pirate"=0) //Clowns just want to prank everyone
+	default_crew_outfit = /datum/outfit/defender/clown
+	default_captain_outfit = /datum/outfit/defender/command/clown
+
+	abstract = 1
 
 /datum/star_faction/ship
 	name = "Ship"
 	cname = "ship"
-	relations = list("nanotrasen"=1,"syndicate"=0,"solgov"=-1)
+	relations = list("nanotrasen"=1,"syndicate"=0,"solgov"=-1,"clown"=-1)
 	abstract = 1
 
-/datum/component
-	var/name = "generic component"
-	var/cname = "component"
+
+
+/datum/ship_component
+	var/name = "generic ship component"
+	var/cname = "ship component"
 
 	var/health = 2
 	var/flags = 0
@@ -193,10 +220,12 @@ GLOBAL_VAR(next_ship_id)
 
 	var/alt_image
 
-/datum/component/New()
-	if(attack_data) attack_data = new attack_data
+/datum/ship_component/New()
+	if(attack_data)
+		attack_data = new attack_data
+		attack_data.our_ship_component = src
 
-/datum/component/cockpit
+/datum/ship_component/cockpit
 	name = "bridge"
 	cname = "cockpit"
 
@@ -204,7 +233,45 @@ GLOBAL_VAR(next_ship_id)
 
 	flags = SHIP_CONTROL
 
-/datum/component/weapon
+/datum/ship_component/repair
+	name = "engineering section"
+	cname = "repair"
+
+	flags = SHIP_REPAIR
+
+/datum/ship_component/engines
+	name = "engine nacelle"
+	cname = "engine"
+
+	health = 1
+
+	flags = SHIP_ENGINES
+
+/datum/ship_component/hull
+	name = "hull"
+	cname = "hull"
+
+/datum/ship_component/reactor //compact engineering + shield ship_component for smaller ships.
+	name = "reactor compartment"
+	cname = "reactor"
+
+	flags = SHIP_SHIELDS | SHIP_REPAIR
+
+/datum/ship_component/drone_core
+	name = "drone control core"
+	cname = "drone"
+
+	health = 2
+
+	flags = SHIP_WEAPONS | SHIP_CONTROL
+
+/datum/ship_component/shields
+	name = "shield generator"
+	cname = "shields"
+
+	flags = SHIP_SHIELDS
+
+/datum/ship_component/weapon
 	name = "phase cannon"
 	cname = "weapon"
 
@@ -215,110 +282,74 @@ GLOBAL_VAR(next_ship_id)
 
 	alt_image = "weapon"
 
-/datum/component/shields
-	name = "shield generator"
-	cname = "shields"
+/datum/ship_component/weapon/proc/attack_effect(var/turf/T)
+	new /obj/effect/temp_visual/ship_target(T, attack_data)
 
-	flags = SHIP_SHIELDS
-
-/datum/component/repair
-	name = "engineering section"
-	cname = "repair"
-
-	flags = SHIP_REPAIR
-
-/datum/component/engines
-	name = "engine nacelle"
-	cname = "engine"
-
-	health = 1
-
-	flags = SHIP_ENGINES
-
-/datum/component/hull
-	name = "hull"
-	cname = "hull"
-
-/datum/component/reactor //compact engineering + shield component for smaller ships.
-	name = "reactor compartment"
-	cname = "reactor"
-
-	flags = SHIP_SHIELDS | SHIP_REPAIR
-
-/datum/component/drone_core
-	name = "drone control core"
-	cname = "drone"
-
-	health = 2
-
-	flags = SHIP_WEAPONS | SHIP_CONTROL
-
-/datum/component/weapon/random
+/datum/ship_component/weapon/random
 	name = "standard mount"
 	cname = "r_weapon"
 	fire_rate = 300
 
-
 	var/list/possible_weapons = list(/datum/ship_attack/laser,/datum/ship_attack/ballistic,/datum/ship_attack/chaingun)
 
-/datum/component/weapon/random/New()
+/datum/ship_component/weapon/random/New()
 		attack_data = pick(possible_weapons)
 		attack_data = new attack_data
 		name = attack_data.cname
 
-/datum/component/weapon/random/special
+/datum/ship_component/weapon/random/special
 	name = "special mount"
 	cname = "s_weapon"
 	fire_rate = 300
 
 	possible_weapons = list(/datum/ship_attack/ion,/datum/ship_attack/stun_bomb,/datum/ship_attack/flame_bomb)
 
-/datum/component/weapon/random/memegun
+/datum/ship_component/weapon/random/memegun
 	name = "meme weapon"
 	cname = "meme_weapon"
 	fire_rate = 100
 
-	possible_weapons = list(/datum/ship_attack/slipstorm,/datum/ship_attack/honkerblaster,/datum/ship_attack/bananabomb)
+	possible_weapons = list(/datum/ship_attack/slipstorm,/datum/ship_attack/honkerblaster,/datum/ship_attack/bananabomb,/datum/ship_attack/vape_bomb,/datum/ship_attack/carrier_weapon/catgirl)
 
 
 		//Phase Cannons
-/datum/component/slowweapon
+/datum/ship_component/weapon/slowweapon
 	name = "slow phase cannon"
 	cname = "slow_weapon"
 
 	flags = SHIP_WEAPONS
 	attack_data = /datum/ship_attack/laser
-	var/fire_rate = 300
+	fire_rate = 300
 
 	alt_image = "weapon"
 
-/datum/component/fastweapon
+/datum/ship_component/weapon/fastweapon
 	name = "fast phase cannon"
 	cname = "fast_weapon"
 
 	flags = SHIP_WEAPONS
 	attack_data = /datum/ship_attack/laser
-	var/fire_rate = 100
+	fire_rate = 100
 
 	alt_image = "weapon"
 
 
 		//MAC Cannons
-/datum/component/weapon/mac_cannon
+/datum/ship_component/weapon/mac_cannon
 	name = "MAC cannon"
 	cname = "mac_cannon"
 	fire_rate = 400
 
 	attack_data = /datum/ship_attack/ballistic
 
-/datum/component/weapon/slow_mac_cannon
+/datum/ship_component/weapon/slow_mac_cannon
 	name = "slow MAC cannon"
 	cname = "slow_mac_cannon"
 	fire_rate = 600
 
 	attack_data = /datum/ship_attack/ballistic
 
-/datum/component/weapon/fast_mac_cannon
+/datum/ship_component/weapon/fast_mac_cannon
 	name = "fast MAC cannon"
 	cname = "fast_mac_cannon"
 	fire_rate = 200
@@ -326,21 +357,21 @@ GLOBAL_VAR(next_ship_id)
 	attack_data = /datum/ship_attack/ballistic
 
 		//Ion Cannons
-/datum/component/weapon/ion
+/datum/ship_component/weapon/ion
 	name = "ion cannon"
 	cname = "ion_weapon"
 	fire_rate = 300
 
 	attack_data = /datum/ship_attack/ion
 
-/datum/component/weapon/slow_ion
+/datum/ship_component/weapon/slow_ion
 	name = "slow ion cannon"
 	cname = "slow_ion_weapon"
 	fire_rate = 450
 
 	attack_data = /datum/ship_attack/ion
 
-/datum/component/weapon/fast_ion
+/datum/ship_component/weapon/fast_ion
 	name = "fast ion cannon"
 	cname = "fast_ion_weapon"
 	fire_rate = 150
@@ -349,21 +380,21 @@ GLOBAL_VAR(next_ship_id)
 
 
 		//Firebombs
-/datum/component/weapon/firebomb
+/datum/ship_component/weapon/firebomb
 	name = "firebomber"
 	cname = "firebomber"
 	fire_rate = 300
 
 	attack_data = /datum/ship_attack/flame_bomb
 
-/datum/component/weapon/slow_firebomb
+/datum/ship_component/weapon/slow_firebomb
 	name = "slow firebomber"
 	cname = "slow_firebomber"
 	fire_rate = 450
 
 	attack_data = /datum/ship_attack/flame_bomb
 
-/datum/component/weapon/fast_firebomb
+/datum/ship_component/weapon/fast_firebomb
 	name = "fast firebomber"
 	cname = "fast_firebomber"
 	fire_rate = 150
@@ -372,21 +403,21 @@ GLOBAL_VAR(next_ship_id)
 
 
 			//Stun Bombs
-/datum/component/weapon/stunbomb
+/datum/ship_component/weapon/stunbomb
 	name = "stunbomber"
 	cname = "stunbomber"
 	fire_rate = 300
 
 	attack_data = /datum/ship_attack/stun_bomb
 
-/datum/component/weapon/slow_stunbomb
+/datum/ship_component/weapon/slow_stunbomb
 	name = "slow stunbomber"
 	cname = "slow_stunbomber"
 	fire_rate = 450
 
 	attack_data = /datum/ship_attack/stun_bomb
 
-/datum/component/weapon/fast_stunbomb
+/datum/ship_component/weapon/fast_stunbomb
 	name = "fast chaingun"
 	cname = "fast_stunbomber"
 	fire_rate = 150
@@ -395,27 +426,56 @@ GLOBAL_VAR(next_ship_id)
 
 
 			//Chainguns
-/datum/component/weapon/chaingun
+/datum/ship_component/weapon/chaingun
 	name = "chaingun"
 	cname = "chaingun"
 	fire_rate = 500
 
 	attack_data = /datum/ship_attack/chaingun
 
-/datum/component/weapon/slow_chaingun
+/datum/ship_component/weapon/slow_chaingun
 	name = "slow chaingun"
 	cname = "slow_chaingun"
 	fire_rate = 750
 
 	attack_data = /datum/ship_attack/chaingun
 
-/datum/component/weapon/fast_chaingun
+/datum/ship_component/weapon/fast_chaingun
 	name = "fast chaingun"
 	cname = "fast_chaingun"
 	fire_rate = 250
 
 	attack_data = /datum/ship_attack/chaingun
 
+
+	//carrier weapon
+
+/datum/ship_component/weapon/carrier_weapon
+	name = "carrier blaster"
+	cname = "carrier_weapon"
+	fire_rate = 200
+
+	attack_data = /datum/ship_attack/carrier_weapon
+
+/datum/ship_component/weapon/carrier_weapon/oneTime		//one time only boarding squad, supported by weak ion blasts afterward
+	cname = "carrier_weapon_event"
+	attack_data = /datum/ship_attack/carrier_weapon/oneTime
+
+/datum/ship_component/weapon/unknown_ship_weapon
+	name = "unknown ship weapon"
+	cname = "unknown_ship_weapon"
+	attack_data = /datum/ship_attack/prototype_laser_barrage
+	health = 30 //please dont 1shot my fancy new weapon please
+
+	fire_rate = 500
+
+/datum/ship_component/weapon/unknown_ship_weapon/attack_effect(var/turf/T) //10 shots, 7 spread
+	var/turf/target_sub
+	new /obj/effect/temp_visual/ship_target(T, attack_data) //Initial hit
+	for(var/I = 1 to 10) //Loop for each fragment
+		spawn(attack_data.warning_time+I)//Saves spamming many audio queues at once
+			target_sub = locate(T.x + rand(-7,7),T.y + rand(-7,7), T.z)
+			new /obj/effect/temp_visual/ship_target(target_sub, attack_data)
 
 // AI MODULES
 
@@ -450,12 +510,12 @@ GLOBAL_VAR(next_ship_id)
 	if(!istype(chosen_target)) //if "ship" is picked.
 		ship.attacking_player = 1
 		SSship.broadcast_message("<span class=notice>Warning! Enemy ship detected powering up weapons! ([ship.name]) Prepare for combat!</span>",SSship.alert_sound,ship)
-		message_admins("[ship.name] has engaged the players into combat at [ship.system]!")
+		message_admins("[ship.name] of the [ship.faction] has engaged the players into combat at [ship.system]!")
 	else
 		ship.attacking_target = chosen_target
 		SSship.broadcast_message("<span class=notice>Caution! [SSship.faction2prefix(ship)] ship ([ship.name]) locking on to [SSship.faction2prefix(ship.attacking_target)] ship ([ship.attacking_target.name]).</span>",null,ship)
 
-		for(var/datum/component/weapon/W in ship.components)
+		for(var/datum/ship_component/weapon/W in ship.ship_components)
 			W.next_attack = world.time + W.fire_rate + rand(1,100) //so we don't get instantly cucked
 
 //OPERATIONS MODULES

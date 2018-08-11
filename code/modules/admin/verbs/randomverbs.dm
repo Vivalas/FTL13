@@ -488,9 +488,9 @@ Traitors and the like can also be revived with the previous role mostly intact.
 
 	var/confirm = alert(src, "Send a public report, or a classified report?", "Announce", "Public", "Classified")
 	if(confirm == "Public")
-		priority_announce(crBody, crTitle, 'sound/AI/commandreport.ogg', "Admin", crSender)
+		priority_announce(crBody, crTitle, 'sound/ai/commandreport.ogg', "Admin", crSender)
 	else
-		priority_announce("A report has been downloaded and printed out at all communications consoles.", "Incoming Classified Message", 'sound/AI/commandreport.ogg')
+		priority_announce("A report has been downloaded and printed out at all communications consoles.", "Incoming Classified Message", 'sound/ai/commandreport.ogg')
 
 		print_command_report(crBody,"[confirm=="Public" ? "" : "Classified "][crSender] Report")
 
@@ -618,7 +618,7 @@ Traitors and the like can also be revived with the previous role mostly intact.
 	message_admins("[key_name_admin(usr)] has gibbed [key_name_admin(M)]")
 
 	if(isobserver(M))
-		new /obj/effect/gibspawner/generic(M.loc, M.viruses)
+		new /obj/effect/gibspawner/generic(get_turf(M))
 		return
 	if(confirm == "Yes")
 		M.gib()
@@ -652,9 +652,9 @@ Traitors and the like can also be revived with the previous role mostly intact.
 	set desc = "switches between 1x and custom views"
 
 	if(view == world.view)
-		view = input("Select view range:", "FUCK YE", 7) in list(1,2,3,4,5,6,7,8,9,10,11,12,13,14,128)
+		change_view(input("Select view range:", "FUCK YE", 7) in list(1,2,3,4,5,6,7,8,9,10,11,12,13,14,128))
 	else
-		view = world.view
+		change_view(world.view)
 
 	log_admin("[key_name(usr)] changed their view range to [view].")
 	//message_admins("\blue [key_name_admin(usr)] changed their view range to [view].")	//why? removed by order of XSI
@@ -1058,7 +1058,7 @@ GLOBAL_LIST_EMPTY(custom_outfits) //Admin created outfits
 			continue
 
 		M.audible_message("<span class='italics'>...wabbajack...wabbajack...</span>")
-		playsound(M.loc, 'sound/magic/Staff_Change.ogg', 50, 1, -1)
+		playsound(M.loc, 'sound/magic/staff_change.ogg', 50, 1, -1)
 
 		wabbajack(M)
 
@@ -1160,14 +1160,14 @@ GLOBAL_LIST_EMPTY(custom_outfits) //Admin created outfits
 	set category = "Server"
 	set name = "Toggle Hub"
 
-	world.visibility = (!world.visibility)
+	world.update_hub_visibility(!GLOB.hub_visibility)
 
-	log_admin("[key_name(usr)] has toggled the server's hub status for the round, it is now [(world.visibility?"on":"off")] the hub.")
-	message_admins("[key_name_admin(usr)] has toggled the server's hub status for the round, it is now [(world.visibility?"on":"off")] the hub.")
-	if (world.visibility && !world.reachable)
+	log_admin("[key_name(usr)] has toggled the server's hub status for the round, it is now [(GLOB.hub_visibility?"on":"off")] the hub.")
+	message_admins("[key_name_admin(usr)] has toggled the server's hub status for the round, it is now [(GLOB.hub_visibility?"on":"off")] the hub.")
+	if (GLOB.hub_visibility && !world.reachable)
 		message_admins("WARNING: The server will not show up on the hub because byond is detecting that a filewall is blocking incoming connections.")
 
-	SSblackbox.add_details("admin_toggle","Toggled Hub Visibility|[world.visibility]") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+	SSblackbox.add_details("admin_toggle","Toggled Hub Visibility|[GLOB.hub_visibility]") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
 /client/proc/smite(mob/living/carbon/human/target as mob)
 	set name = "Smite"
@@ -1176,11 +1176,11 @@ GLOBAL_LIST_EMPTY(custom_outfits) //Admin created outfits
 		return
 
 	var/list/punishment_list = list(ADMIN_PUNISHMENT_LIGHTNING, ADMIN_PUNISHMENT_BRAINDAMAGE, ADMIN_PUNISHMENT_GIB, ADMIN_PUNISHMENT_BSA)
-
 	var/punishment = input("Choose a punishment", "DIVINE SMITING") as null|anything in punishment_list
 
 	if(QDELETED(target) || !punishment)
 		return
+	var/message = input("Choose the message they will receive") as text
 
 	switch(punishment)
 		if(ADMIN_PUNISHMENT_LIGHTNING)
@@ -1188,13 +1188,24 @@ GLOBAL_LIST_EMPTY(custom_outfits) //Admin created outfits
 			T.Beam(target, icon_state="lightning[rand(1,12)]", time = 5)
 			target.adjustFireLoss(75)
 			target.electrocution_animation(40)
-			to_chat(target, "<span class='userdanger'>The gods have punished you for your sins!</span>")
+			if(!message)
+				message = "The gods have punished you for your sins!"
+			to_chat(target, "<span class='userdanger'>[message]</span>")
 		if(ADMIN_PUNISHMENT_BRAINDAMAGE)
+			if(!message)
+				message = "You feel dumber"
 			target.adjustBrainLoss(75)
+			to_chat(target, "<span class='userdanger'>[message]</span>")
 		if(ADMIN_PUNISHMENT_GIB)
+			if(!message)
+				message = "The gods have punished you for your sins!"
 			target.gib(FALSE)
+			to_chat(target, "<span class='userdanger'>[message]</span>")
 		if(ADMIN_PUNISHMENT_BSA)
+			if(!message)
+				message = "It seems you have angered Centcom a bit too much"
 			bluespace_artillery(target)
+			to_chat(target,"<span class='userdanger'>[message]</span>")
 
 	var/msg = "[key_name_admin(usr)] punished [key_name_admin(target)] with [punishment]."
 	message_admins(msg)

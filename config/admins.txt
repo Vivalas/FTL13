@@ -8,6 +8,7 @@
 # NOTE: syntax was changed to allow hyphenation of ranknames, since spaces are stripped.      #
 ###############################################################################################
 Optimumtact = Host
+NewSta = Game Master
 Expletives = Game Master
 kingofkosmos = Game Master
 MrStonedOne = Game Master
@@ -136,3 +137,4 @@ ecolli = Game Master
 crazypilot = Game Master
 vivalas = Game Master
 ninjanomnom = Game Master
+cdey = Game Master

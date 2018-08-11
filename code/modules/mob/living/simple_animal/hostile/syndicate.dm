@@ -85,7 +85,7 @@
 	maxHealth = 340
 	health = 340
 	loot = list(/obj/effect/mob_spawn/human/corpse/syndicatestormtrooper,
-				/obj/item/weapon/melee/energy/sword/saber/red,
+				/obj/item/weapon/melee/transforming/energy/sword/saber/red,
 				/obj/item/weapon/shield/energy)
 
 ///////////////Guns////////////
@@ -98,7 +98,7 @@
 	icon_state = "syndicateranged"
 	icon_living = "syndicateranged"
 	casingtype = /obj/item/ammo_casing/c45nostamina
-	projectilesound = 'sound/weapons/Gunshot_smg.ogg'
+	projectilesound = 'sound/weapons/gunshot_smg.ogg'
 	loot = list(/obj/effect/gibspawner/human)
 
 /mob/living/simple_animal/hostile/syndicate/ranged/space
@@ -119,7 +119,7 @@
 	name = "Syndicate Stormtrooper"
 	maxHealth = 200
 	health = 200
-	projectilesound = 'sound/weapons/Gunshot.ogg'
+	projectilesound = 'sound/weapons/gunshot.ogg'
 	casingtype = /obj/item/ammo_casing/shotgun/buckshot
 	loot = list(/obj/effect/mob_spawn/human/corpse/syndicatestormtrooper,
 				/obj/item/weapon/gun/ballistic/automatic/shotgun/bulldog/unrestricted,
@@ -128,16 +128,26 @@
 ///////////////Misc////////////
 
 /mob/living/simple_animal/hostile/syndicate/civilian
+	name = "Syndicate civilian"
+	desc = "An unarmed civilian. Doesn't seem to eager to meet you"
 	minimum_distance = 10
 	retreat_distance = 10
 	obj_damage = 0
 	environment_smash = ENVIRONMENT_SMASH_NONE
+	var/list/upgrade_options = list(/mob/living/simple_animal/hostile/syndicate = 10, /mob/living/simple_animal/hostile/syndicate/melee = 20, /mob/living/simple_animal/hostile/syndicate/ranged = 15,\
+	/mob/living/simple_animal/hostile/syndicate/melee/space = 15, /mob/living/simple_animal/hostile/syndicate/ranged/space = 15,\
+	/mob/living/simple_animal/hostile/syndicate/ranged/space/stormtrooper = 2, /mob/living/simple_animal/hostile/syndicate/melee/space/stormtrooper = 2,\
+	/mob/living/simple_animal/hostile/syndicate/mecha_pilot = 1) //I can't wait for the inevitable 10 mech roll
 
 /mob/living/simple_animal/hostile/syndicate/civilian/Aggro()
 	..()
 	summon_backup(15)
 	say("GUARDS!!")
 
+/mob/living/simple_animal/hostile/syndicate/civilian/proc/arm_for_balance()
+	var/mob/living/simple_animal/hostile/syndicate/S = pickweight(upgrade_options) //Pick a better unit and qdel the civ
+	new S(loc)
+	qdel(src)
 
 /mob/living/simple_animal/hostile/viscerator
 	name = "viscerator"

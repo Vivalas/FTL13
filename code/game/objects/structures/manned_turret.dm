@@ -8,7 +8,6 @@
 	can_buckle = TRUE
 	density = TRUE
 	max_integrity = 100
-	obj_integrity = 100
 	buckle_lying = FALSE
 	layer = ABOVE_MOB_LAYER
 	var/view_range = 10
@@ -153,7 +152,7 @@
 	P.starting = targets_from
 	P.firer = user
 	P.original = target
-	playsound(src, 'sound/weapons/Gunshot_smg.ogg', 75, 1)
+	playsound(src, 'sound/weapons/gunshot_smg.ogg', 75, 1)
 	P.xo = target.x - targets_from.x
 	P.yo = target.y - targets_from.y
 	P.Angle = calculated_projectile_vars[1] + rand(-9, 9)

@@ -3,12 +3,12 @@
 	icon_state = "fab-idle"
 	name = "exosuit fabricator"
 	desc = "Nothing is being built."
-	density = 1
-	anchored = 1
-	use_power = 1
+	density = TRUE
+	anchored = TRUE
+	use_power = IDLE_POWER_USE
 	idle_power_usage = 20
 	active_power_usage = 5000
-	req_access = list(GLOB.access_robotics)
+	req_access = list(ACCESS_ROBOTICS)
 	var/time_coeff = 1
 	var/component_coeff = 1
 	var/datum/material_container/materials
@@ -86,8 +86,8 @@
 /obj/machinery/mecha_part_fabricator/emag_act()
 	if(emagged)
 		return
-
-	emagged = 0.5
+	emagged = TRUE
+	req_access = null
 	say("DB error \[Code 0x00F1\]")
 	sleep(10)
 	say("Attempting auto-repair...")
@@ -95,8 +95,6 @@
 	say("User DB corrupted \[Code 0x00FA\]. Truncating data structure...")
 	sleep(30)
 	say("User DB truncated. Please contact your Nanotrasen system operator for future assistance.")
-	req_access = null
-	emagged = 1
 
 /obj/machinery/mecha_part_fabricator/proc/output_parts_list(set_name)
 	var/output = ""
@@ -156,10 +154,10 @@
 
 	materials.use_amount(res_coef)
 	add_overlay("fab-active")
-	use_power = 2
+	use_power = ACTIVE_POWER_USE
 	updateUsrDialog()
 	sleep(get_construction_time_w_coeff(D))
-	use_power = 1
+	use_power = IDLE_POWER_USE
 	cut_overlay("fab-active")
 	desc = initial(desc)
 
@@ -338,9 +336,9 @@
 /obj/machinery/mecha_part_fabricator/Topic(href, href_list)
 	if(..())
 		return
-	var/datum/topic_input/filter = new /datum/topic_input(href,href_list)
+	var/datum/topic_input/mecha_part_filter = new /datum/topic_input(href,href_list)
 	if(href_list["part_set"])
-		var/tpart_set = filter.getStr("part_set")
+		var/tpart_set = mecha_part_filter.getStr("part_set")
 		if(tpart_set)
 			if(tpart_set=="clear")
 				part_set = null
@@ -348,7 +346,7 @@
 				part_set = tpart_set
 				screen = "parts"
 	if(href_list["part"])
-		var/T = filter.getStr("part")
+		var/T = mecha_part_filter.getStr("part")
 		for(var/v in files.known_designs)
 			var/datum/design/D = files.known_designs[v]
 			if(D.build_type & MECHFAB)
@@ -359,7 +357,7 @@
 						add_to_queue(D)
 					break
 	if(href_list["add_to_queue"])
-		var/T = filter.getStr("add_to_queue")
+		var/T = mecha_part_filter.getStr("add_to_queue")
 		for(var/v in files.known_designs)
 			var/datum/design/D = files.known_designs[v]
 			if(D.build_type & MECHFAB)
@@ -368,10 +366,10 @@
 					break
 		return update_queue_on_page()
 	if(href_list["remove_from_queue"])
-		remove_from_queue(filter.getNum("remove_from_queue"))
+		remove_from_queue(mecha_part_filter.getNum("remove_from_queue"))
 		return update_queue_on_page()
 	if(href_list["partset_to_queue"])
-		add_part_set_to_queue(filter.get("partset_to_queue"))
+		add_part_set_to_queue(mecha_part_filter.get("partset_to_queue"))
 		return update_queue_on_page()
 	if(href_list["process_queue"])
 		spawn(0)
@@ -385,8 +383,8 @@
 	if(href_list["screen"])
 		screen = href_list["screen"]
 	if(href_list["queue_move"] && href_list["index"])
-		var/index = filter.getNum("index")
-		var/new_index = index + filter.getNum("queue_move")
+		var/index = mecha_part_filter.getNum("index")
+		var/new_index = index + mecha_part_filter.getNum("queue_move")
 		if(isnum(index) && isnum(new_index) && IsInteger(index) && IsInteger(new_index))
 			if(IsInRange(new_index,1,queue.len))
 				queue.Swap(index,new_index)
@@ -397,7 +395,7 @@
 	if(href_list["sync"])
 		sync()
 	if(href_list["part_desc"])
-		var/T = filter.getStr("part_desc")
+		var/T = mecha_part_filter.getStr("part_desc")
 		for(var/v in files.known_designs)
 			var/datum/design/D = files.known_designs[v]
 			if(D.build_type & MECHFAB)

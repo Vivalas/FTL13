@@ -24,27 +24,31 @@
 	var/datum/lighting_corner/C
 	var/thing
 	for (thing in corners)
+		if(!thing)
+			continue
 		C = thing
 		C.update_active()
 
 // Builds a lighting object for us, but only if our area is dynamic.
 /turf/proc/lighting_build_overlay()
-	if (lighting_object)
-		return
+	if(lighting_object)
+		qdel(lighting_object,force=TRUE) //Shitty fix for lighting objects persisting after death
 
 	var/area/A = loc
 	if (!IS_DYNAMIC_LIGHTING(A))
 		return
 
+	new/atom/movable/lighting_object(src)
+
 	if (!lighting_corners_initialised)
 		generate_missing_corners()
-
-	new/atom/movable/lighting_object(src)
 
 	var/thing
 	var/datum/lighting_corner/C
 	var/datum/light_source/S
 	for (thing in corners)
+		if(!thing)
+			continue
 		C = thing
 		if (!C.active) // We would activate the corner, calculate the lighting for it.
 			for (thing in C.affecting)
@@ -61,6 +65,8 @@
 	var/thing
 	var/datum/lighting_corner/L
 	for (thing in corners)
+		if(!thing)
+			continue
 		L = thing
 		totallums += L.lum_r + L.lum_b + L.lum_g
 
@@ -105,12 +111,11 @@
 		reconsider_lights()
 
 /turf/proc/change_area(var/area/old_area, var/area/new_area)
-	if (new_area.dynamic_lighting != old_area.dynamic_lighting)
-		if (new_area.dynamic_lighting)
-			lighting_build_overlay()
+	if (new_area.dynamic_lighting)
+		lighting_build_overlay()
 
-		else
-			lighting_clear_overlay()
+	else
+		lighting_clear_overlay()
 
 /turf/proc/get_corners()
 	if (has_opaque_atom)
@@ -130,30 +135,3 @@
 		corners[i] = new/datum/lighting_corner(src, GLOB.LIGHTING_CORNER_DIAGONAL[i])
 
 
-/turf/ChangeTurf(path)
-	if (!path || (!GLOB.use_preloader && path == type) || !SSlighting.initialized)
-		return ..()
-
-	var/old_opacity = opacity
-	var/old_dynamic_lighting = dynamic_lighting
-	var/old_affecting_lights = affecting_lights
-	var/old_lighting_object = lighting_object
-	var/old_corners = corners
-
-	. = ..() //At this point the turf has changed
-
-	recalc_atom_opacity()
-	lighting_object = old_lighting_object
-	affecting_lights = old_affecting_lights
-	corners = old_corners
-	if (old_opacity != opacity || dynamic_lighting != old_dynamic_lighting)
-		reconsider_lights()
-
-	if (dynamic_lighting != old_dynamic_lighting)
-		if (IS_DYNAMIC_LIGHTING(src))
-			lighting_build_overlay()
-		else
-			lighting_clear_overlay()
-
-	for(var/turf/open/space/S in RANGE_TURFS(1, src)) //RANGE_TURFS is in code\__HELPERS\game.dm
-		S.update_starlight()

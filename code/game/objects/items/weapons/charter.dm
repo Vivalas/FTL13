@@ -1,7 +1,7 @@
 #define STATION_RENAME_TIME_LIMIT 3000
 
 /obj/item/weapon/station_charter
-	name = "station charter"
+	name = "ship charter"
 	icon = 'icons/obj/wizard.dmi'
 	icon_state = "scroll2"
 	desc = "An official document entrusting the governance of the ship \
@@ -16,21 +16,15 @@
 
 	var/static/regex/standard_station_regex
 
-/obj/item/weapon/station_charter/New()
+/obj/item/weapon/station_charter/Initialize()
 	. = ..()
 	if(!standard_station_regex)
 		var/prefixes = jointext(GLOB.station_prefixes, "|")
 		var/names = jointext(GLOB.station_names, "|")
 		var/suffixes = jointext(GLOB.station_suffixes, "|")
 		var/numerals = jointext(GLOB.station_numerals, "|")
-		var/regexstr = "(([prefixes]) )?(([names]) ?)([suffixes]) ([numerals])"
+		var/regexstr = "^(([prefixes]) )?(([names]) ?)([suffixes]) ([numerals])$"
 		standard_station_regex = new(regexstr)
-
-/obj/item/weapon/station_charter/Destroy()
-	if(response_timer_id)
-		deltimer(response_timer_id)
-	response_timer_id = null
-	. = ..()
 
 /obj/item/weapon/station_charter/attack_self(mob/living/user)
 	if(used)
@@ -47,6 +41,10 @@
 		[station_name()]? Keep in mind particularly terrible names may be \
 		rejected by your employers, while names using the standard format, \
 		will automatically be accepted.", max_length=MAX_CHARTER_LEN)
+
+	if(response_timer_id)
+		to_chat(user, "You're still waiting for approval from your employers about your proposed name change, it'd be best to wait for now.")
+		return
 
 	if(!new_name)
 		return
@@ -102,6 +100,8 @@
 	name_type = "planet"
 	icon_state = "banner"
 	item_state = "banner"
+	lefthand_file = 'icons/mob/inhands/equipment/banners_lefthand.dmi'
+	righthand_file = 'icons/mob/inhands/equipment/banners_righthand.dmi'
 	desc = "A cunning device used to claim ownership of planets."
 	w_class = 5
 	force = 15

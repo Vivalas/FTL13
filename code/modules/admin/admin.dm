@@ -26,6 +26,7 @@
 		to_chat(usr, "You seem to be selecting a mob that doesn't exist anymore.")
 		return
 
+	log_admin("[key_name(usr)] checked the player panel for mob [M]")
 	var/body = "<html><head><title>Options for [M.key]</title></head>"
 	body += "<body>Options panel for <b>[M]</b>"
 	if(M.client)
@@ -183,13 +184,15 @@
 	set name = "Access Newscaster Network"
 	set desc = "Allows you to view, add and edit news feeds."
 
-	if (!istype(src,/datum/admins))
+	if (!istype(src, /datum/admins))
 		src = usr.client.holder
-	if (!istype(src,/datum/admins))
+	if (!istype(src, /datum/admins))
 		to_chat(usr, "Error: you are not an admin!")
 		return
 	var/dat
 	dat = text("<HEAD><TITLE>Admin Newscaster</TITLE></HEAD><H3>Admin Newscaster Unit</H3>")
+
+	log_admin("[key_name(usr)] has accessed the newscaster network.")
 
 	switch(admincaster_screen)
 		if(0)
@@ -211,7 +214,7 @@
 			dat+="<BR><A href='?src=\ref[src];ac_menu_censor_channel=1'>Mark Feed Channel with Nanotrasen D-Notice (disables and locks the channel).</A>"
 			dat+="<BR><HR><A href='?src=\ref[src];ac_set_signature=1'>The newscaster recognises you as:<BR> <FONT COLOR='green'>[src.admin_signature]</FONT></A>"
 		if(1)
-			dat+= "Station Feed Channels<HR>"
+			dat+= "Ship Feed Channels<HR>"
 			if( isemptylist(GLOB.news_network.network_channels) )
 				dat+="<I>No active channels found...</I>"
 			else
@@ -262,7 +265,7 @@
 		if(9)
 			dat+="<B>[admincaster_feed_channel.channel_name]: </B><FONT SIZE=1>\[created by: <FONT COLOR='maroon'>[admincaster_feed_channel.returnAuthor(-1)]</FONT>\]</FONT><HR>"
 			if(src.admincaster_feed_channel.censored)
-				dat+="<FONT COLOR='red'><B>ATTENTION: </B></FONT>This channel has been deemed as threatening to the welfare of the station, and marked with a Nanotrasen D-Notice.<BR>"
+				dat+="<FONT COLOR='red'><B>ATTENTION: </B></FONT>This channel has been deemed as threatening to the welfare of the ship, and marked with a Nanotrasen D-Notice.<BR>"
 				dat+="No further feed story additions are allowed while the D-Notice is in effect.</FONT><BR><BR>"
 			else
 				if( isemptylist(src.admincaster_feed_channel.messages) )
@@ -295,7 +298,7 @@
 			dat+="<BR><A href='?src=\ref[src];ac_setScreen=[0]'>Cancel</A>"
 		if(11)
 			dat+="<B>Nanotrasen D-Notice Handler</B><HR>"
-			dat+="<FONT SIZE=1>A D-Notice is to be bestowed upon the channel if the handling Authority deems it as harmful for the station's"
+			dat+="<FONT SIZE=1>A D-Notice is to be bestowed upon the channel if the handling Authority deems it as harmful for the ship's"
 			dat+="morale, integrity or disciplinary behaviour. A D-Notice will render a channel unable to be updated by anyone, without deleting any feed"
 			dat+="stories it might contain at the time. You can lift a D-Notice if you have the required access at any time.</FONT><HR>"
 			if(isemptylist(GLOB.news_network.network_channels))
@@ -321,9 +324,9 @@
 			dat+="<BR><A href='?src=\ref[src];ac_setScreen=[10]'>Back</A>"
 		if(13)
 			dat+="<B>[src.admincaster_feed_channel.channel_name]: </B><FONT SIZE=1>\[ created by: <FONT COLOR='maroon'>[src.admincaster_feed_channel.returnAuthor(-1)]</FONT> \]</FONT><BR>"
-			dat+="Channel messages listed below. If you deem them dangerous to the station, you can <A href='?src=\ref[src];ac_toggle_d_notice=\ref[src.admincaster_feed_channel]'>Bestow a D-Notice upon the channel</A>.<HR>"
+			dat+="Channel messages listed below. If you deem them dangerous to the ship, you can <A href='?src=\ref[src];ac_toggle_d_notice=\ref[src.admincaster_feed_channel]'>Bestow a D-Notice upon the channel</A>.<HR>"
 			if(src.admincaster_feed_channel.censored)
-				dat+="<FONT COLOR='red'><B>ATTENTION: </B></FONT>This channel has been deemed as threatening to the welfare of the station, and marked with a Nanotrasen D-Notice.<BR>"
+				dat+="<FONT COLOR='red'><B>ATTENTION: </B></FONT>This channel has been deemed as threatening to the welfare of the ship, and marked with a Nanotrasen D-Notice.<BR>"
 				dat+="No further feed story additions are allowed while the D-Notice is in effect.</FONT><BR><BR>"
 			else
 				if( isemptylist(src.admincaster_feed_channel.messages) )
@@ -366,7 +369,7 @@
 			dat+="<B>Wanted Issue successfully deleted from Circulation</B><BR>"
 			dat+="<BR><A href='?src=\ref[src];ac_setScreen=[0]'>Return</A><BR>"
 		if(18)
-			dat+="<B><FONT COLOR ='maroon'>-- STATIONWIDE WANTED ISSUE --</B></FONT><BR><FONT SIZE=2>\[Submitted by: <FONT COLOR='green'>[GLOB.news_network.wanted_issue.scannedUser]</FONT>\]</FONT><HR>"
+			dat+="<B><FONT COLOR ='maroon'>-- SHIPWIDE WANTED ISSUE --</B></FONT><BR><FONT SIZE=2>\[Submitted by: <FONT COLOR='green'>[GLOB.news_network.wanted_issue.scannedUser]</FONT>\]</FONT><HR>"
 			dat+="<B>Criminal</B>: [GLOB.news_network.wanted_issue.criminal]<BR>"
 			dat+="<B>Description</B>: [GLOB.news_network.wanted_issue.body]<BR>"
 			dat+="<B>Photo:</B>: "
@@ -427,19 +430,27 @@
 	var/list/options = list("Regular Restart", "Hard Restart (No Delay/Feeback Reason)", "Hardest Restart (No actions, just reboot)")
 	if(world.RunningService())
 		options += "Service Restart (Force restart DD)";
-	var result = input(usr, "Select reboot method", "World Reboot", options[1]) as null|anything in options
-	if(result)
-		SSblackbox.add_details("admin_verb","Reboot World") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
-		switch(result)
-			if("Regular Restart")
-				SSticker.Reboot("Initiated by [usr.client.holder.fakekey ? "Admin" : usr.key].", "admin reboot - by [usr.key] [usr.client.holder.fakekey ? "(stealth)" : ""]", 10)
-			if("Hard Restart (No Delay, No Feeback Reason)")
-				world.Reboot()
-			if("Hardest Restart (No actions, just reboot)")
-				world.Reboot(fast_track = TRUE)
-			if("Service Restart (Force restart DD)")
-				GLOB.reboot_mode = REBOOT_MODE_HARD
-				world.ServiceReboot()
+
+	var/rebootconfirm
+	if(SSticker.admin_delay_notice)
+		if(alert(usr, "Are you sure? An admin has already delayed the round end for the following reason: [SSticker.admin_delay_notice]", "Confirmation", "Yes", "No") == "Yes")
+			rebootconfirm = TRUE
+	else
+		rebootconfirm = TRUE
+	if(rebootconfirm)
+		var result = input(usr, "Select reboot method", "World Reboot", options[1]) as null|anything in options
+		if(result)
+			SSblackbox.add_details("admin_verb","Reboot World") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
+			switch(result)
+				if("Regular Restart")
+					SSticker.Reboot("Initiated by [usr.client.holder.fakekey ? "Admin" : usr.key].", "admin reboot - by [usr.key] [usr.client.holder.fakekey ? "(stealth)" : ""]", 10)
+				if("Hard Restart (No Delay, No Feeback Reason)")
+					world.Reboot()
+				if("Hardest Restart (No actions, just reboot)")
+					world.Reboot(fast_track = TRUE)
+				if("Service Restart (Force restart DD)")
+					GLOB.reboot_mode = REBOOT_MODE_HARD
+					world.ServiceReboot()
 
 /datum/admins/proc/end_round()
 	set category = "Server"
@@ -509,7 +520,7 @@
 	set name="Toggle Dead OOC"
 	GLOB.dooc_allowed = !( GLOB.dooc_allowed )
 
-	log_admin("[key_name(usr)] toggled OOC.")
+	log_admin("[key_name(usr)] toggled dead OOC.")
 	message_admins("[key_name_admin(usr)] toggled Dead OOC.")
 	SSblackbox.add_details("admin_toggle","Toggle Dead OOC|[GLOB.dooc_allowed]") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
@@ -542,7 +553,7 @@
 		to_chat(world, "<B>New players may no longer enter the game.</B>")
 	else
 		to_chat(world, "<B>New players may now enter the game.</B>")
-	log_admin("[key_name(usr)] toggled new player game entering.")
+	log_admin("[key_name(usr)] toggled new player game entering to be [GLOB.enter_allowed ? "" : "dis"]allowed.")
 	message_admins("<span class='adminnotice'>[key_name_admin(usr)] toggled new player game entering.</span>")
 	world.update_status()
 	SSblackbox.add_details("admin_toggle","Toggle Entering|[GLOB.enter_allowed]") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
@@ -635,7 +646,7 @@
 	var/chosen = pick_closest_path(object)
 	if(!chosen)
 		return
-	if(ispath(chosen,/turf))
+	if(ispath(chosen, /turf))
 		var/turf/T = get_turf(usr.loc)
 		T.ChangeTurf(chosen)
 	else
@@ -658,6 +669,7 @@
 		to_chat(usr, "This mob has no mind!")
 		return
 
+	log_admin("[key_name(usr)] has viewed [key_name(M)]'s traitor panel.")
 	M.mind.edit_memory()
 	SSblackbox.add_details("admin_verb","Traitor Panel") //If you are copy-pasting this, ensure the 2nd parameter is unique to the new proc!
 
@@ -696,7 +708,7 @@
 			to_chat(usr, "<b>AI [key_name(S, usr)]'s laws:</b>")
 		else if(iscyborg(S))
 			var/mob/living/silicon/robot/R = S
-			to_chat(usr, "<b>CYBORG [key_name(S, usr)] [R.connected_ai?"(Slaved to: [R.connected_ai])":"(Independant)"]: laws:</b>")
+			to_chat(usr, "<b>CYBORG [key_name(S, usr)] [R.connected_ai?"(Slaved to: [R.connected_ai])":"(Independent)"]: laws:</b>")
 		else if (ispAI(S))
 			to_chat(usr, "<b>pAI [key_name(S, usr)]'s laws:</b>")
 		else
@@ -710,6 +722,7 @@
 		to_chat(usr, "<b>No AIs located</b>" )
 
 /datum/admins/proc/output_all_devil_info()
+	log_admin("[key_name(usr)] has output all devil info.")
 	var/devil_number = 0
 	for(var/D in SSticker.mode.devils)
 		devil_number++
@@ -718,6 +731,7 @@
 		to_chat(usr, "<b>No Devils located</b>" )
 
 /datum/admins/proc/output_devil_info(mob/living/M)
+	log_admin("[key_name(usr)] has checked the devil info of [key_name(M)]")
 	if(is_devil(M))
 		to_chat(usr, SSticker.mode.printdevilinfo(M.mind))
 	else
@@ -729,34 +743,33 @@
 	var/dat = "<html><head><title>Manage Free Slots</title></head><body>"
 	var/count = 0
 
-	if(SSticker && !SSticker.mode)
+	if(!SSticker.HasRoundStarted())
 		alert(usr, "You cannot manage jobs before the round starts!")
 		return
 
-	if(SSjob)
-		for(var/datum/job/job in SSjob.occupations)
-			count++
-			var/J_title = html_encode(job.title)
-			var/J_opPos = html_encode(job.total_positions - (job.total_positions - job.current_positions))
-			var/J_totPos = html_encode(job.total_positions)
-			if(job.total_positions < 0)
-				dat += "[J_title]: [J_opPos]   (unlimited)"
-			else
-				dat += "[J_title]: [J_opPos]/[J_totPos]"
+	for(var/datum/job/job in SSjob.occupations)
+		count++
+		var/J_title = rhtml_encode(job.title)
+		var/J_opPos = rhtml_encode(job.total_positions - (job.total_positions - job.current_positions))
+		var/J_totPos = rhtml_encode(job.total_positions)
+		if(job.total_positions < 0)
+			dat += "[J_title]: [J_opPos]   (unlimited)"
+		else
+			dat += "[J_title]: [J_opPos]/[J_totPos]"
 
-			if(job.title == "AI" || job.title == "Cyborg")
-				dat += "   (Cannot Late Join)<br>"
-				continue
-			if(job.total_positions >= 0)
-				dat += "   <A href='?src=\ref[src];addjobslot=[job.title]'>Add</A>  |  "
-				if(job.total_positions > job.current_positions)
-					dat += "<A href='?src=\ref[src];removejobslot=[job.title]'>Remove</A>  |  "
-				else
-					dat += "Remove  |  "
-				dat += "<A href='?src=\ref[src];unlimitjobslot=[job.title]'>Unlimit</A>"
+		if(job.title == "AI" || job.title == "Cyborg")
+			dat += "   (Cannot Late Join)<br>"
+			continue
+		if(job.total_positions >= 0)
+			dat += "   <A href='?src=\ref[src];addjobslot=[job.title]'>Add</A>  |  "
+			if(job.total_positions > job.current_positions)
+				dat += "<A href='?src=\ref[src];removejobslot=[job.title]'>Remove</A>  |  "
 			else
-				dat += "   <A href='?src=\ref[src];limitjobslot=[job.title]'>Limit</A>"
-			dat += "<br>"
+				dat += "Remove  |  "
+			dat += "<A href='?src=\ref[src];unlimitjobslot=[job.title]'>Unlimit</A>"
+		else
+			dat += "   <A href='?src=\ref[src];limitjobslot=[job.title]'>Limit</A>"
+		dat += "<br>"
 
 	dat += "</body>"
 	var/winheight = 100 + (count * 20)
@@ -833,4 +846,3 @@
 				"Admin login: [key_name(src)]")
 		if(string)
 			message_admins("[string]")
-

@@ -8,6 +8,8 @@
 	meat = /obj/item/weapon/reagent_containers/food/snacks/meat/slab/human/mutant/zombie
 	species_traits = list(NOBREATH,RESISTCOLD,RESISTPRESSURE,NOBLOOD,RADIMMUNE,NOZOMBIE,EASYDISMEMBER,EASYLIMBATTACHMENT)
 	mutant_organs = list(/obj/item/organ/tongue/zombie)
+	disliked_food = NONE
+	liked_food = GROSS | MEAT | RAW
 
 /datum/species/zombie/infectious
 	name = "Infectious Zombie"
@@ -18,6 +20,9 @@
 	armor = 20 // 120 damage to KO a zombie, which kills it
 	speedmod = 2
 	mutanteyes = /obj/item/organ/eyes/night_vision/zombie
+
+/datum/species/zombie/infectious/spec_stun(mob/living/carbon/human/H,amount)
+	. = min(2, amount)
 
 /datum/species/zombie/infectious/spec_life(mob/living/carbon/C)
 	. = ..()

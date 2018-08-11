@@ -43,8 +43,14 @@
 	throw_atom(AM)
 
 /turf/open/space/transit/proc/throw_atom(atom/movable/AM)
-	if(noop || !AM || istype(AM, /obj/docking_port) || istype(AM, /obj/machinery)) //hacky fix until the real cause is found
+	set waitfor = FALSE
+	if(noop || !AM || istype(AM, /obj/docking_port))
 		return
+	if(AM.loc != src) //Multi-tile objects are "in" multiple locs but its loc is it's true placement.
+		return
+	if(locate(/obj/structure/lattice) in contents) //you can stand on lattice
+		return
+
 	var/max = world.maxx-TRANSITIONEDGE
 	var/min = 1+TRANSITIONEDGE
 
@@ -77,8 +83,7 @@
 			_y = min
 
 	var/turf/T = locate(_x, _y, _z)
-	AM.loc = T
-	AM.newtonian_move(dir)
+	AM.forceMove(T)
 
 /turf/open/space/transit/CanBuildHere()
 	return SSshuttle.is_in_shuttle_bounds(src)

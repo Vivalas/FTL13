@@ -22,3 +22,18 @@ endmap
 
 map trailblazer
 endmap
+
+map scarab
+endmap
+
+map FOBshuttle
+endmap
+
+map Ineese
+endmap
+
+map Feliciana
+endmap
+
+map Butterfly
+endmap

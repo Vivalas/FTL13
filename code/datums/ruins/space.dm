@@ -43,12 +43,14 @@
 	name = "Asteroid 5"
 	description = "Oh my god, another giant rock!"
 
+/* // REE this ruin is hanging the map loader, fix!
 /datum/map_template/ruin/space/deep_storage
 	id = "deep-storage"
 	suffix = "deepstorage.dmm"
 	name = "Survivalist Bunker"
 	description = "Assume the best, prepare for the worst. Generally, you should do so by digging a three man heavily fortified bunker into a giant unused asteroid. \
 	Then make it self sufficient, mask any evidence of construction, hook it covertly into the telecommunications network and hope for the best."
+*/
 
 /datum/map_template/ruin/space/bigderelict1
 	id = "bigderelict1"
@@ -236,6 +238,12 @@
 	description = "There seems to be a pair of buses that pulled over for repairs. What were they doing..? Their shipment sure  seems to be filled with a strange mix. \
 	Anyway, it looks like some people tried to fix it up for a long time but didn't really get anywhere..."
 
+/datum/map_template/ruin/space/oldstation
+	id = "oldstation"
+	suffix = "oldstation.dmm"
+	name = "Ancient Space Station"
+	description = "The crew of a space station awaken one hundred years after a crisis. Awaking to a derelict space station on the verge of collapse, and a hostile force of invading \
+	hivebots. Can the surviving crew overcome the odds and survive and rebuild, or will the cold embrace of the stars become their new home?"
 
 /datum/map_template/ruin/space/miracle
 	id = "miracle"

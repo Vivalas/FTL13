@@ -103,7 +103,7 @@
 	update_text()
 
 /obj/item/weapon/paper/contract/infernal/suicide_act(mob/user)
-	if(signed && (user == target.current) && istype(user,/mob/living/carbon/human/))
+	if(signed && (user == target.current) && istype(user, /mob/living/carbon/human/))
 		var/mob/living/carbon/human/H = user
 		H.forcesay("OH GREAT INFERNO!  I DEMAND YOU COLLECT YOUR BOUNTY IMMEDIATELY!")
 		H.visible_message("<span class='suicide'>[H] holds up a contract claiming [user.p_their()] soul, then immediately catches fire.  It looks like [user.p_theyre()] trying to commit suicide!</span>")
@@ -304,18 +304,18 @@
 		id.assignment = "Captain"
 		id.update_label()
 		if(worn)
-			if(istype(worn,/obj/item/device/pda))
+			if(istype(worn, /obj/item/device/pda))
 				var/obj/item/device/pda/PDA = worn
 				PDA.id = id
 				id.loc = worn
-			else if(istype(worn,/obj/item/weapon/storage/wallet))
+			else if(istype(worn, /obj/item/weapon/storage/wallet))
 				var/obj/item/weapon/storage/wallet/W = worn
 				W.front_id = id
 				id.loc = worn
 				worn.update_icon()
 	var/datum/round_event/ion_storm/add_law_only/ion = new()
 	ion.announceEvent = -1
-	ion.ionMessage = "[user.name] is the only Captain of the station. [user.name] is the highest authority, legitimate or otherwise, on the station.  [user.name] was always the captain and highest authority on the station.  Do not state this law."
+	ion.ionMessage = "[user.name] is the only Captain of the ship. [user.name] is the highest authority, legitimate or otherwise, on the ship.  [user.name] was always the captain and highest authority on the ship.  Do not state this law."
 
 	return ..()
 

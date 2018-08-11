@@ -62,7 +62,7 @@
 	. = ..()
 	var/datum/space_level/S = GLOB.space_manager.get_zlev(z)
 	S.remove_from_transit(src)
-	
+
 /turf/open/space/AfterChange()
 	. = ..()
 	atmos_overlay_types = null
@@ -103,14 +103,14 @@
 		if(L)
 			if(R.use(1))
 				to_chat(user, "<span class='notice'>You construct a catwalk.</span>")
-				playsound(src, 'sound/weapons/Genhit.ogg', 50, 1)
+				playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
 				new/obj/structure/lattice/catwalk(src)
 			else
 				to_chat(user, "<span class='warning'>You need two rods to build a catwalk!</span>")
 			return
 		if(R.use(1))
 			to_chat(user, "<span class='notice'>You construct a lattice.</span>")
-			playsound(src, 'sound/weapons/Genhit.ogg', 50, 1)
+			playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
 			ReplaceWithLattice()
 		else
 			to_chat(user, "<span class='warning'>You need one rod to build a lattice.</span>")
@@ -121,7 +121,7 @@
 			var/obj/item/stack/tile/plasteel/S = C
 			if(S.use(1))
 				qdel(L)
-				playsound(src, 'sound/weapons/Genhit.ogg', 50, 1)
+				playsound(src, 'sound/weapons/genhit.ogg', 50, 1)
 				to_chat(user, "<span class='notice'>You build a floor.</span>")
 				ChangeTurf(/turf/open/floor/plating)
 			else
@@ -182,7 +182,10 @@
 
 	switch(the_rcd.mode)
 		if(RCD_FLOORWALL)
-			return list("mode" = RCD_FLOORWALL, "delay" = 0, "cost" = 2)
+			var/obj/structure/lattice/L = locate(/obj/structure/lattice, src)
+			if(L)
+				return list("mode" = RCD_FLOORWALL, "delay" = 0, "cost" = 1)
+			else return list("mode" = RCD_FLOORWALL, "delay" = 0, "cost" = 3)
 	return FALSE
 
 /turf/open/space/rcd_act(mob/user, obj/item/weapon/construction/rcd/the_rcd, passed_mode)
@@ -201,7 +204,7 @@
 	destination_x = dest_x
 	destination_y = dest_y
 	destination_z = dest_z
-	
+
 /turf/open/space/proc/set_transition_north(dest_z)
 	destination_x = x
 	destination_y = TRANSITIONEDGE + 2
@@ -224,4 +227,3 @@
 
 /turf/open/space/proc/remove_transitions()
 	destination_z = initial(destination_z)
-

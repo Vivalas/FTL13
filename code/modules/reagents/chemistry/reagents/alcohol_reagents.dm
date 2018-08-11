@@ -38,14 +38,16 @@ All effects don't start immediately, but rather get worse over time; the rate is
 		var/mob/living/carbon/human/H = M
 		if(H.drunkenness < volume * boozepwr * ALCOHOL_THRESHOLD_MODIFIER)
 			H.drunkenness = max((H.drunkenness + (sqrt(volume) * boozepwr * ALCOHOL_RATE)), 0) //Volume, power, and server alcohol rate effect how quickly one gets drunk
+			var/obj/item/organ/liver/L = H.getorganslot("liver")
+			H.applyLiverDamage((max(sqrt(volume) * boozepwr * L.alcohol_tolerance, 0))/10)
 	return ..() || .
 
 /datum/reagent/consumable/ethanol/reaction_obj(obj/O, reac_volume)
-	if(istype(O,/obj/item/weapon/paper))
+	if(istype(O, /obj/item/weapon/paper))
 		var/obj/item/weapon/paper/paperaffected = O
 		paperaffected.clearpaper()
 		to_chat(usr, "<span class='notice'>[paperaffected]'s ink washes away.</span>")
-	if(istype(O,/obj/item/weapon/book))
+	if(istype(O, /obj/item/weapon/book))
 		if(reac_volume >= 5)
 			var/obj/item/weapon/book/affectedbook = O
 			affectedbook.dat = null
@@ -82,6 +84,38 @@ All effects don't start immediately, but rather get worse over time; the rate is
 	glass_name = "glass of beer"
 	glass_desc = "A freezing pint of beer."
 
+/datum/reagent/consumable/ethanol/ftliver
+	name = "Faster-Than-Liver"
+	id = "ftliver"
+	description = "A beverage born among the stars, it's said drinking too much feels just like FTL transit."
+	color = "#0D0D0D" // rgb: 13, 13, 13
+	boozepwr = 52
+	overdose_threshold = 40
+	var/start_cycle = 0 // tells us when to stop
+	taste_description = "empty space"
+	glass_icon_state = "ftliver"
+	glass_name = "glass of Faster-Than-Liver"
+	glass_desc = "My god, it's full of stars!"
+
+/datum/reagent/consumable/ethanol/ftliver/overdose_start(mob/living/M)
+	if( start_cycle )
+		return
+	to_chat(M,"<span class='userdanger'>You feel the floor shudder beneath you!</span>")
+	M.Knockdown(55)
+	M.adjust_blindness(100)
+	start_cycle = current_cycle
+
+/datum/reagent/consumable/ethanol/ftliver/on_mob_life(mob/living/M)
+	if( start_cycle && current_cycle > start_cycle + 5 )
+		M.adjust_blindness(-100)
+		start_cycle = 0
+	return ..()
+
+/datum/reagent/consumable/ethanol/ftliver/on_mob_delete(mob/living/M)
+	if( start_cycle )
+		M.adjust_blindness(-100)
+	return ..()
+
 /datum/reagent/consumable/ethanol/beer/green
 	name = "Green Beer"
 	id = "greenbeer"
@@ -114,9 +148,10 @@ All effects don't start immediately, but rather get worse over time; the rate is
 /datum/reagent/consumable/ethanol/kahlua/on_mob_life(mob/living/M)
 	M.dizziness = max(0,M.dizziness-5)
 	M.drowsyness = max(0,M.drowsyness-3)
-	M.AdjustSleeping(-2, 0)
+	M.AdjustSleeping(-40, FALSE)
 	M.Jitter(5)
-	return ..()
+	..()
+	. = 1
 
 /datum/reagent/consumable/ethanol/whiskey
 	name = "Whiskey"
@@ -145,7 +180,7 @@ All effects don't start immediately, but rather get worse over time; the rate is
 
 /datum/reagent/consumable/ethanol/thirteenloko/on_mob_life(mob/living/M)
 	M.drowsyness = max(0,M.drowsyness-7)
-	M.AdjustSleeping(-2)
+	M.AdjustSleeping(-40)
 	if (M.bodytemperature > 310)
 		M.bodytemperature = max(310, M.bodytemperature - (5 * TEMPERATURE_DAMAGE_COEFFICIENT))
 	M.Jitter(5)
@@ -529,7 +564,7 @@ All effects don't start immediately, but rather get worse over time; the rate is
 	glass_desc = "Heavy, hot and strong. Just like the Iron fist of the LAW."
 
 /datum/reagent/consumable/ethanol/beepsky_smash/on_mob_life(mob/living/M)
-	M.Stun(2, 0)
+	M.Stun(40, 0)
 	return ..()
 
 /datum/reagent/consumable/ethanol/irish_cream
@@ -1111,10 +1146,10 @@ All effects don't start immediately, but rather get worse over time; the rate is
 	M.slurring += 3
 	switch(current_cycle)
 		if(51 to 200)
-			M.Sleeping(5, 0)
+			M.Sleeping(100, FALSE)
 			. = 1
 		if(201 to INFINITY)
-			M.AdjustSleeping(2, 0)
+			M.AdjustSleeping(40, FALSE)
 			M.adjustToxLoss(2, 0)
 			. = 1
 	..()
@@ -1159,7 +1194,7 @@ All effects don't start immediately, but rather get worse over time; the rate is
 	glass_desc = "A drink that is guaranteed to knock you silly."
 
 /datum/reagent/consumable/ethanol/neurotoxin/on_mob_life(mob/living/carbon/M)
-	M.Weaken(3, 1, 0)
+	M.Knockdown(60, 1, 0)
 	M.dizziness +=6
 	switch(current_cycle)
 		if(15 to 45)

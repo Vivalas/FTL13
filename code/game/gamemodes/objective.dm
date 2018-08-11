@@ -6,7 +6,6 @@ GLOBAL_LIST_EMPTY(all_objectives)
 	var/datum/mind/target = null		//If they are focused on a particular person.
 	var/target_amount = 0				//If they are focused on a particular number. Steal objectives have their own counter.
 	var/completed = 0					//currently only used for custom objectives.
-	var/dangerrating = 0				//How hard the objective is, essentially. Used for dishing out objectives and checking overall victory.
 	var/martyr_compatible = 0			//If the objective is compatible with martyr objective, i.e. if you can still do it while dead.
 	var/failed = 0						//Definitely failed. Not "not done yet", failed.
 
@@ -86,7 +85,6 @@ GLOBAL_LIST_EMPTY(all_objectives)
 
 /datum/objective/assassinate
 	var/target_role_type=0
-	dangerrating = 10
 	martyr_compatible = 1
 
 /datum/objective/assassinate/find_target_by_role(role, role_type=0, invert=0)
@@ -97,7 +95,10 @@ GLOBAL_LIST_EMPTY(all_objectives)
 
 /datum/objective/assassinate/check_completion()
 	if(target && target.current)
-		if(target.current.stat == DEAD || issilicon(target.current) || isbrain(target.current) || target.current.z > 6 || !target.current.ckey) //Borgs/brains/AIs count as dead for traitor objectives. --NeoFite
+		var/mob/living/carbon/human/H
+		if(ishuman(target.current))
+			H = target.current
+		if(target.current.stat == DEAD || issilicon(target.current) || isbrain(target.current) || target.current.z > 6 || !target.current.ckey || (H && H.dna.species.id == "memezombies")) //Borgs/brains/AIs count as dead for traitor objectives. --NeoFite
 			return 1
 		return 0
 	return 1
@@ -149,7 +150,6 @@ GLOBAL_LIST_EMPTY(all_objectives)
 
 /datum/objective/maroon
 	var/target_role_type=0
-	dangerrating = 5
 	martyr_compatible = 1
 
 /datum/objective/maroon/find_target_by_role(role, role_type=0, invert=0)
@@ -160,7 +160,10 @@ GLOBAL_LIST_EMPTY(all_objectives)
 
 /datum/objective/maroon/check_completion()
 	if(target && target.current)
-		if(target.current.stat == DEAD || issilicon(target.current) || isbrain(target.current) || target.current.z > 6 || !target.current.ckey) //Borgs/brains/AIs count as dead for traitor objectives. --NeoFite
+		var/mob/living/carbon/human/H
+		if(ishuman(target.current))
+			H = target.current
+		if(target.current.stat == DEAD || issilicon(target.current) || isbrain(target.current) || target.current.z > 6 || !target.current.ckey || (H && H.dna.species.id == "memezombies")) //Borgs/brains/AIs count as dead for traitor objectives. --NeoFite
 			return 1
 		if(target.current.onCentcom() || target.current.onSyndieBase())
 			return 0
@@ -176,7 +179,6 @@ GLOBAL_LIST_EMPTY(all_objectives)
 
 /datum/objective/debrain//I want braaaainssss
 	var/target_role_type=0
-	dangerrating = 20
 
 /datum/objective/debrain/find_target_by_role(role, role_type=0, invert=0)
 	if(!invert)
@@ -209,7 +211,6 @@ GLOBAL_LIST_EMPTY(all_objectives)
 
 /datum/objective/protect//The opposite of killing a dude.
 	var/target_role_type=0
-	dangerrating = 10
 	martyr_compatible = 1
 
 /datum/objective/protect/find_target_by_role(role, role_type=0, invert=0)
@@ -238,7 +239,6 @@ GLOBAL_LIST_EMPTY(all_objectives)
 
 /datum/objective/hijack
 	explanation_text = "Hijack the shuttle to ensure no loyalist Nanotrasen crew escape alive and out of custody."
-	dangerrating = 25
 	martyr_compatible = 0 //Technically you won't get both anyway.
 
 /datum/objective/hijack/check_completion()
@@ -248,9 +248,7 @@ GLOBAL_LIST_EMPTY(all_objectives)
 		return 0
 	if(issilicon(owner.current))
 		return 0
-
-	var/area/A = get_area(owner.current)
-	if(SSshuttle.emergency.areaInstance != A)
+	if(!SSshuttle.emergency.shuttle_areas[get_area(owner.current)])
 		return 0
 
 	return SSshuttle.emergency.is_hijacked()
@@ -258,49 +256,38 @@ GLOBAL_LIST_EMPTY(all_objectives)
 
 /datum/objective/hijackclone
 	explanation_text = "Hijack the emergency shuttle by ensuring only you (or your copies) escape."
-	dangerrating = 25
 	martyr_compatible = 0
 
 /datum/objective/hijackclone/check_completion()
 	if(!owner.current)
-		return 0
+		return FALSE
 	if(SSshuttle.emergency.mode != SHUTTLE_ENDGAME)
-		return 0
+		return FALSE
 
-	var/area/A = SSshuttle.emergency.areaInstance
-
+	var/in_shuttle = FALSE
 	for(var/mob/living/player in GLOB.player_list) //Make sure nobody else is onboard
-		if(player.mind && player.mind != owner)
-			if(player.stat != DEAD)
-				if(issilicon(player)) //Borgs are technically dead anyways
-					continue
-				if(isanimal(player)) //animals don't count
-					continue
-				if(isbrain(player)) //also technically dead
-					continue
-				if(get_area(player) == A)
+		if(SSshuttle.emergency.shuttle_areas[get_area(player)])
+			if(player.mind && player.mind != owner)
+				if(player.stat != DEAD)
+					if(issilicon(player)) //Borgs are technically dead anyways
+						continue
+					if(isanimal(player)) //animals don't count
+						continue
+					if(isbrain(player)) //also technically dead
+						continue
 					var/location = get_turf(player.mind.current)
-					if(player.real_name != owner.current.real_name && !istype(location, /turf/open/floor/plasteel/shuttle/red) && !istype(location, /turf/open/floor/mineral/plastitanium/brig))
-						return 0
-
-	for(var/mob/living/player in GLOB.player_list) //Make sure at least one of you is onboard
-		if(player.mind && player.mind != owner)
-			if(player.stat != DEAD)
-				if(issilicon(player)) //Borgs are technically dead anyways
-					continue
-				if(isanimal(player)) //animals don't count
-					continue
-				if(isbrain(player)) //also technically dead
-					continue
-				if(get_area(player) == A)
-					var/location = get_turf(player.mind.current)
-					if(player.real_name == owner.current.real_name && !istype(location, /turf/open/floor/plasteel/shuttle/red) && !istype(location, /turf/open/floor/mineral/plastitanium/brig))
-						return 1
-	return 0
+					if(istype(location, /turf/open/floor/plasteel/shuttle/red))
+						continue
+					if(istype(location, /turf/open/floor/mineral/plastitanium/brig))
+						continue
+					if(player.real_name != owner.current.real_name)
+						return FALSE
+					else
+						in_shuttle = TRUE
+	return in_shuttle
 
 /datum/objective/block
 	explanation_text = "Do not allow any organic lifeforms to escape on the shuttle alive."
-	dangerrating = 25
 	martyr_compatible = 1
 
 /datum/objective/block/check_completion()
@@ -309,14 +296,12 @@ GLOBAL_LIST_EMPTY(all_objectives)
 	if(SSshuttle.emergency.mode != SHUTTLE_ENDGAME)
 		return 1
 
-	var/area/A = SSshuttle.emergency.areaInstance
-
 	for(var/mob/living/player in GLOB.player_list)
 		if(issilicon(player))
 			continue
 		if(player.mind)
 			if(player.stat != DEAD)
-				if(get_area(player) == A)
+				if(get_area(player) in SSshuttle.emergency.shuttle_areas)
 					return 0
 
 	return 1
@@ -324,17 +309,14 @@ GLOBAL_LIST_EMPTY(all_objectives)
 
 /datum/objective/purge
 	explanation_text = "Ensure no mutant humanoid species are present aboard the escape shuttle."
-	dangerrating = 25
 	martyr_compatible = 1
 
 /datum/objective/purge/check_completion()
 	if(SSshuttle.emergency.mode != SHUTTLE_ENDGAME)
 		return 1
 
-	var/area/A = SSshuttle.emergency.areaInstance
-
 	for(var/mob/living/player in GLOB.player_list)
-		if(get_area(player) == A && player.mind && player.stat != DEAD && ishuman(player))
+		if(get_area(player) in SSshuttle.emergency.shuttle_areas && player.mind && player.stat != DEAD && ishuman(player))
 			var/mob/living/carbon/human/H = player
 			if(H.dna.species.id != "human")
 				return 0
@@ -344,7 +326,6 @@ GLOBAL_LIST_EMPTY(all_objectives)
 
 /datum/objective/robot_army
 	explanation_text = "Have at least eight active cyborgs synced to you."
-	dangerrating = 25
 	martyr_compatible = 0
 
 /datum/objective/robot_army/check_completion()
@@ -364,7 +345,6 @@ GLOBAL_LIST_EMPTY(all_objectives)
 
 /datum/objective/escape
 	explanation_text = "Escape on the shuttle or an escape pod alive and without being in custody."
-	dangerrating = 5
 
 /datum/objective/escape/check_completion()
 	if(issilicon(owner.current))
@@ -392,7 +372,6 @@ GLOBAL_LIST_EMPTY(all_objectives)
 	return 0
 
 /datum/objective/escape/escape_with_identity
-	dangerrating = 10
 	var/target_real_name // Has to be stored because the target's real_name can change over the course of the round
 	var/target_missing_id
 
@@ -431,7 +410,6 @@ GLOBAL_LIST_EMPTY(all_objectives)
 
 /datum/objective/survive
 	explanation_text = "Stay alive until the end."
-	dangerrating = 3
 
 /datum/objective/survive/check_completion()
 	if(!owner.current || owner.current.stat == DEAD || isbrain(owner.current))
@@ -443,7 +421,6 @@ GLOBAL_LIST_EMPTY(all_objectives)
 
 /datum/objective/martyr
 	explanation_text = "Die a glorious death."
-	dangerrating = 1
 
 /datum/objective/martyr/check_completion()
 	if(!owner.current) //Gibbed, etc.
@@ -466,7 +443,6 @@ GLOBAL_LIST_EMPTY(possible_items)
 /datum/objective/steal
 	var/datum/objective_item/targetinfo = null //Save the chosen item datum so we can access it later.
 	var/obj/item/steal_target = null //Needed for custom objectives (they're just items, not datums).
-	dangerrating = 5 //Overridden by the individual item's difficulty, but defaults to 5 for custom objectives.
 	martyr_compatible = 0
 
 /datum/objective/steal/get_target()
@@ -489,8 +465,7 @@ GLOBAL_LIST_EMPTY(possible_items)
 		targetinfo = item
 
 		steal_target = targetinfo.targetitem
-		explanation_text = "Steal [targetinfo.name]."
-		dangerrating = targetinfo.difficulty
+		explanation_text = "Steal [targetinfo.name]"
 		give_special_equipment(targetinfo.special_equipment)
 		return steal_target
 	else
@@ -548,7 +523,6 @@ GLOBAL_LIST_EMPTY(possible_items_special)
 	return set_target(pick(GLOB.possible_items_special))
 
 /datum/objective/steal/exchange
-	dangerrating = 10
 	martyr_compatible = 0
 
 /datum/objective/steal/exchange/proc/set_faction(faction,otheragent)
@@ -570,7 +544,6 @@ GLOBAL_LIST_EMPTY(possible_items_special)
 
 
 /datum/objective/steal/exchange/backstab
-	dangerrating = 3
 
 /datum/objective/steal/exchange/backstab/set_faction(faction)
 	if(faction == "red")
@@ -582,7 +555,6 @@ GLOBAL_LIST_EMPTY(possible_items_special)
 
 
 /datum/objective/download
-	dangerrating = 10
 
 /datum/objective/download/proc/gen_amount_goal()
 	target_amount = rand(10,20)
@@ -618,7 +590,6 @@ GLOBAL_LIST_EMPTY(possible_items_special)
 
 
 /datum/objective/capture
-	dangerrating = 10
 
 /datum/objective/capture/proc/gen_amount_goal()
 		target_amount = rand(5,10)
@@ -627,7 +598,7 @@ GLOBAL_LIST_EMPTY(possible_items_special)
 
 /datum/objective/capture/check_completion()//Basically runs through all the mobs in the area to determine how much they are worth.
 	var/captured_amount = 0
-	var/area/centcom/holding/A = locate()
+	var/area/centcom/holding/A = locate() in GLOB.sortedAreas
 	for(var/mob/living/carbon/human/M in A)//Humans.
 		if(M.stat==2)//Dead folks are worth less.
 			captured_amount+=0.5
@@ -658,21 +629,19 @@ GLOBAL_LIST_EMPTY(possible_items_special)
 
 
 /datum/objective/absorb
-	dangerrating = 10
 
 /datum/objective/absorb/proc/gen_amount_goal(lowbound = 4, highbound = 6)
 	target_amount = rand (lowbound,highbound)
-	if (SSticker)
-		var/n_p = 1 //autowin
-		if (SSticker.current_state == GAME_STATE_SETTING_UP)
-			for(var/mob/dead/new_player/P in GLOB.player_list)
-				if(P.client && P.ready && P.mind!=owner)
-					n_p ++
-		else if (SSticker.IsRoundInProgress())
-			for(var/mob/living/carbon/human/P in GLOB.player_list)
-				if(P.client && !(P.mind in SSticker.mode.changelings) && P.mind!=owner)
-					n_p ++
-		target_amount = min(target_amount, n_p)
+	var/n_p = 1 //autowin
+	if (SSticker.current_state == GAME_STATE_SETTING_UP)
+		for(var/mob/dead/new_player/P in GLOB.player_list)
+			if(P.client && P.ready == PLAYER_READY_TO_PLAY && P.mind!=owner)
+				n_p ++
+	else if (SSticker.IsRoundInProgress())
+		for(var/mob/living/carbon/human/P in GLOB.player_list)
+			if(P.client && !(P.mind in SSticker.mode.changelings) && P.mind!=owner)
+				n_p ++
+	target_amount = min(target_amount, n_p)
 
 	explanation_text = "Extract [target_amount] compatible genome\s."
 	return target_amount
@@ -686,7 +655,6 @@ GLOBAL_LIST_EMPTY(possible_items_special)
 
 
 /datum/objective/destroy
-	dangerrating = 10
 	martyr_compatible = 1
 
 /datum/objective/destroy/find_target()
@@ -913,6 +881,11 @@ GLOBAL_LIST_EMPTY(possible_items_special)
 /datum/objective/ftl/find_target()
 	update_explanation_text()
 
+/datum/objective/ftl/proc/update_system_label(var/state, var/datum/star_system/S, var/datum/planet/P)
+	S.objective = state
+	if(P)
+		P.objective = state
+
 /datum/objective/ftl/killships
 	var/ship_count
 	var/faction
@@ -940,31 +913,42 @@ GLOBAL_LIST_EMPTY(possible_items_special)
 	var/item_name = ""
 	var/datum/planet/source_planet
 	var/datum/planet/target_planet
+	var/list/delivery_types = list("syndicate intelligence documents" = 1, "the volatile bomb" = 1)
 
 /datum/objective/ftl/delivery/find_target()
-	var/datum/supply_pack/delivery_mission/U = new /datum/supply_pack/delivery_mission
+	var/datum/supply_pack/delivery_mission/U = SSshuttle.supply_packs[/datum/supply_pack/delivery_mission]
+	if(!U)
+		SSshuttle.supply_packs[/datum/supply_pack/delivery_mission] = new /datum/supply_pack/delivery_mission
+		U = SSshuttle.supply_packs[/datum/supply_pack/delivery_mission]
 	var/obj_type
 
-	switch(rand(1,2))
-		if(1)
-			// Syndicate documents
+	item_name = pickweight(delivery_types)
+	var/searching_planets = TRUE
+	if(item_name == "syndicate intelligence documents")
+		while(searching_planets) //Only use this when we deal with a system that we don't want the players to go to without admin permission
 			source_planet = SSstarmap.pick_station("syndicate")
-			obj_type = /obj/item/documents/syndicate
-			item_name = "syndicate intelligence documents"
-		if(2)
-			// a fucking damaged bomb
-			source_planet = SSstarmap.pick_station("nanotrasen")
-			obj_type = /obj/structure/volatile_bomb
-			item_name = "the volatile bomb"
+			if(!istype(source_planet.parent_system,/datum/star_system/capital/syndicate)) //Dolos check
+				searching_planets = FALSE
+		obj_type = /obj/item/documents/syndicate
+		item_name = "syndicate intelligence documents"
+		target_planet = SSstarmap.pick_station("nanotrasen")
+	else //if(item_name == "the volatile bomb") //future
+		source_planet = SSstarmap.pick_station("nanotrasen")
+		obj_type = /obj/structure/volatile_bomb
+		item_name = "the volatile bomb"
+		searching_planets = TRUE
+		while(searching_planets) //Only use this when we deal with a system that we don't want the players to go to without admin permission
+			target_planet = SSstarmap.pick_station("syndicate") //I don't get why we haul a bomb from NT to NT, so lets take it to the Syndicate
+			if(!istype(target_planet.parent_system,/datum/star_system/capital/syndicate)) //Dolos check
+				searching_planets = FALSE
 
 	U.objective = src
 	U.contains = list(obj_type)
 	U.crate_name = "[item_name] crate"
 	U.name = item_name
-	SSshuttle.supply_packs[U.type] = U
-	source_planet.station.stock[U] = 1
-
-	target_planet = SSstarmap.pick_station("nanotrasen")
+	source_planet.station.stock[U.type] = 1
+	update_system_label(TRUE,source_planet.parent_system,source_planet)
+	update_system_label(TRUE,target_planet.parent_system,target_planet)
 	..()
 
 /datum/objective/ftl/delivery/update_explanation_text()
@@ -979,20 +963,163 @@ GLOBAL_LIST_EMPTY(possible_items_special)
 	if(!has_purchased_item)
 		return 0
 	var/turf/T = get_turf(delivery_item)
-	if(istype(T.loc, /area/no_entry) && SSmapping.z_level_alloc["[T.z]"] == target_planet)
+	if(istype(T.loc, /area/no_entry/delivery) && SSmapping.z_level_alloc["[T.z]"] == target_planet)
 		completed = 1
 		qdel(delivery_item)
+		update_system_label(FALSE,source_planet.parent_system,source_planet)
+		update_system_label(FALSE,target_planet.parent_system,target_planet)
+
 		return 1
+
+/datum/objective/ftl/boardship
+	var/datum/star_faction/target_faction
+	var/datum/starship/ship_target
+	var/boarding_progress = BOARDING_MISSION_UNSTARTED
+
+/datum/objective/ftl/boardship/find_target()
+	if(prob(25))
+		target_faction = SSship.cname2faction("pirate")
+	else
+		target_faction = SSship.cname2faction("syndicate")
+	var/searching = TRUE
+	while(searching)
+		ship_target = pick(target_faction.ships)
+		if(ship_target.boarding_chance) //Can we even board it?
+			if(!istype(ship_target.system,/datum/star_system/capital/syndicate)) //Dolos check
+				if(ship_target.mission_ai != /datum/ship_ai/escort) //Is the target busy escorting?
+					if(!ship_target.ftl_vector)
+						searching = FALSE
+						ship_target.system.forced_boarding = ship_target
+						ship_target.mission_ai = new /datum/ship_ai/guard //Stop the ship from leaving the current system
+						var/datum/ship_ai/guard/AI = ship_target.mission_ai
+						AI.assigned_system = ship_target.system
+						AI.assigned_system.forced_boarding = ship_target //Sets up all the vars for boarding
+						update_system_label(TRUE,AI.assigned_system)
+	..()
+
+/datum/objective/ftl/boardship/update_explanation_text()
+	explanation_text = "Board and download flight data from [ship_target] (owned by the [ship_target.faction]), currently guarding the [ship_target.mission_ai:assigned_system] system."
+
+/datum/objective/ftl/boardship/check_completion()
+	if(boarding_progress == BOARDING_MISSION_SUCCESS)
+		return TRUE
+	if(!ship_target && !SSstarmap.mode) //Did the target get destroyed already/ Did the crew run from the objective?
+		failed = TRUE
+	return FALSE
+
+/datum/objective/ftl/trade
+	var/target_credits = 0
+	var/max_credits_held = 0
+
+/datum/objective/ftl/trade/find_target()
+	target_credits = SSshuttle.points + rand(80000,150000)
+	..()
+
+/datum/objective/ftl/trade/update_explanation_text()
+	explanation_text = "Increase ship funds to [target_credits] credits. Upon completion you are free to spend as you wish."
+
+/datum/objective/ftl/trade/check_completion()
+	if(SSshuttle.points > max_credits_held)
+		max_credits_held = SSshuttle.points
+	if(max_credits_held >= target_credits)
+		return TRUE
+	else
+		return FALSE
+
+/datum/objective/ftl/hold_system
+	var/datum/star_system/target_system
+	var/faction = "syndicate"
+	var/list/spawnable_ships = list()
+	var/holding_system //If they run, they fail the objective
+	var/total_waves
+	var/current_wave = 1
+	var/wave_active = FALSE
+	var/ships_remaining = -1
+	var/next_wave_start_time
+
+/datum/objective/ftl/hold_system/find_target()
+	var/searching = TRUE
+	var/datum/star_faction/F = SSship.cname2faction(faction)
+	while(searching)
+		target_system = pick(F.systems)
+		if(!istype(target_system,/datum/star_system/capital/syndicate)) //Dolos check
+			searching = FALSE
+			update_system_label(TRUE,target_system)
+	total_waves = rand(2,5)
+	faction = target_system.alignment
+	spawnable_ships = SSship.faction2list(faction)
+	for(var/datum/starship/S in spawnable_ships) //Removes merchant ships
+		if(S.operations_type)
+			spawnable_ships -= S
+	..()
+
+/datum/objective/ftl/hold_system/update_explanation_text()
+	if(!holding_system)
+		explanation_text = "Travel to the [target_system] system (owned by [faction]) and cause a significant distraction for CC to commence operation |REDACTED|. This should take about [total_waves] waves of reinforcements to complete."
+	else
+		explanation_text = "Distress signal spoofed to their fleets. Hold the [target_system] system until operation |REDACTED| is completed. ([current_wave]/[total_waves])."
+
+/datum/objective/ftl/hold_system/proc/manage_waves()
+	if(current_wave >= total_waves)
+		return TRUE
+	if(!holding_system && SSstarmap.current_system == target_system) //They have just arrived, start the waves
+		holding_system = TRUE
+		next_wave_start_time = world.time + rand(500,1000)
+		update_explanation_text()
+	else if(holding_system && !completed)
+		if(holding_system && SSstarmap.current_system != target_system && !SSstarmap.in_transit_planet)
+			failed = TRUE //They ran
+			update_system_label(FALSE,target_system)
+		if(!wave_active && next_wave_start_time <= world.time)
+			wave_active = TRUE
+			ships_remaining = rand(1,2+current_wave) + current_wave//Leads to more intense waves towards the end
+			for(var/C in 1 to ships_remaining)
+				var/datum/starship/ship_to_spawn = pickweight(spawnable_ships)
+				var/datum/starship/ship_spawned = SSship.create_ship(ship_to_spawn,faction,target_system)
+				ship_spawned.mission_ai = new /datum/ship_ai/guard/
+				var/datum/ship_ai/guard/AI = ship_spawned.mission_ai
+				AI.assigned_system = target_system
+				ship_spawned.boarding_chance = -1 //Stops boarding on all these ships. They don't need distracting.
+		else if(!ships_remaining && wave_active)
+			if(current_wave < total_waves)
+				wave_active = FALSE
+				next_wave_start_time = world.time + rand(100,300)
+				current_wave++
+				if(current_wave == total_waves)
+					update_system_label(FALSE,target_system)
+				update_explanation_text()
+	return FALSE
+
+/datum/objective/ftl/hold_system/check_completion()
+	if(manage_waves())
+		return TRUE
+	else
+		return FALSE
+
+/datum/objective/ftl/customobjective
+	var/admin_complete = FALSE
+	var/announce_change = FALSE
+	explanation_text = "Decoding new objective. This may take some time."
+
+/datum/objective/ftl/customobjective/check_completion()
+	if(admin_complete)
+		return TRUE
+	else
+		if(announce_change)
+			announce_change = FALSE
+			priority_announce("Ship objectives received. Please check a communications console for details.", null, null)
+		return FALSE
 
 /datum/objective/ftl/gohome
 	var/datum/star_system/target_system
 
 /datum/objective/ftl/gohome/find_target()
 	target_system = SSstarmap.capitals["nanotrasen"]
+	update_system_label(TRUE,target_system)
 	..()
 
 /datum/objective/ftl/gohome/update_explanation_text()
-	explanation_text = "Return to the nanotrasen capital at [target_system] for debriefing and crew transfer."
+	explanation_text = "Return to the nanotrasen capital at the [target_system] system for debriefing and crew transfer."
 
 /datum/objective/ftl/gohome/check_completion()
 	if(target_system == SSstarmap.current_system)

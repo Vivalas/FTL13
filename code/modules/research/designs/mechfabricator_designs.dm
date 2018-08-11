@@ -750,7 +750,7 @@
 
 /datum/design/drone_shell
 	name = "Drone Shell"
-	desc = "A shell of a maintenance drone, an expendable robot built to perform station repairs."
+	desc = "A shell of a maintenance drone, an expendable robot built to perform ship repairs."
 	id = "drone_shell"
 	req_tech = list("programming" = 2, "biotech" = 4)
 	build_type = MECHFAB | PROTOLATHE
@@ -763,7 +763,6 @@
 	name = "Flash"
 	desc = "When a problem arises, SCIENCE is the solution."
 	id = "sflash"
-	req_tech = list("magnets" = 3, "combat" = 2)
 	build_type = MECHFAB
 	materials = list(MAT_METAL = 750, MAT_GLASS = 750)
 	construction_time = 100

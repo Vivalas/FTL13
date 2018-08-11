@@ -3,7 +3,7 @@
 	desc = "Used to remotely locate or lockdown exosuits."
 	icon_screen = "mecha"
 	icon_keyboard = "tech_key"
-	req_access = list(GLOB.access_robotics)
+	req_access = list(ACCESS_ROBOTICS)
 	circuit = /obj/item/weapon/circuitboard/computer/mecha_control
 	var/list/located = list()
 	var/screen = 0
@@ -41,19 +41,19 @@
 /obj/machinery/computer/mecha/Topic(href, href_list)
 	if(..())
 		return
-	var/datum/topic_input/filter = new /datum/topic_input(href,href_list)
+	var/datum/topic_input/mecha_filter = new /datum/topic_input(href,href_list)
 	if(href_list["send_message"])
-		var/obj/item/mecha_parts/mecha_tracking/MT = filter.getObj("send_message")
+		var/obj/item/mecha_parts/mecha_tracking/MT = mecha_filter.getObj("send_message")
 		var/message = stripped_input(usr,"Input message","Transmit message")
 		var/obj/mecha/M = MT.in_mecha()
 		if(trim(message) && M)
 			M.occupant_message(message)
 		return
 	if(href_list["shock"])
-		var/obj/item/mecha_parts/mecha_tracking/MT = filter.getObj("shock")
+		var/obj/item/mecha_parts/mecha_tracking/MT = mecha_filter.getObj("shock")
 		MT.shock()
 	if(href_list["get_log"])
-		var/obj/item/mecha_parts/mecha_tracking/MT = filter.getObj("get_log")
+		var/obj/item/mecha_parts/mecha_tracking/MT = mecha_filter.getObj("get_log")
 		stored_data = MT.get_mecha_log()
 		screen = 1
 	if(href_list["return"])
@@ -106,7 +106,7 @@
 /obj/item/mecha_parts/mecha_tracking/proc/shock()
 	var/obj/mecha/M = in_mecha()
 	if(M)
-		M.emp_act(2)
+		M.emp_act(EMP_LIGHT)
 	qdel(src)
 
 /obj/item/mecha_parts/mecha_tracking/proc/get_mecha_log()
